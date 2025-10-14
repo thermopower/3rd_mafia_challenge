@@ -3,7 +3,7 @@
 
 # To specify which agents are active by default when --agents is not used,
 # uncomment and populate the following line. If omitted, all agents are active.
-default_agents = ["cursor", "codex"]
+default_agents = ["cursor", "codex", "claude"]
 
 # Enable nested rule loading from nested .ruler directories
 # When enabled, ruler will search for and process .ruler directories throughout the project hierarchy
@@ -29,6 +29,10 @@ default_agents = ["cursor", "codex"]
 # Define Model Context Protocol servers here. Two examples:
 # 1. A stdio server (local executable)
 # 2. A remote server (HTTP-based)
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["@playwright/mcp@latest"]
 
 # [mcp_servers.example_stdio]
 # command = "node"
