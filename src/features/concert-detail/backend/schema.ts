@@ -82,7 +82,7 @@ export const SeatCategoryRowSchema = z.object({
   concert_id: z.string().uuid(),
   name: z.string(),
   display_color: z.string(),
-  price: z.string(),
+  price: z.number(),
   description: z.string().nullable(),
   total_seats: z.number(),
   created_at: z.string(),

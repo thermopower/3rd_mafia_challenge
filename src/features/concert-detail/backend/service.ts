@@ -138,7 +138,7 @@ export const getConcertDetailById = async (
       id: categoryParse.data.id,
       name: categoryParse.data.name,
       displayColor: categoryParse.data.display_color,
-      price: parseFloat(categoryParse.data.price),
+      price: categoryParse.data.price,
       description: categoryParse.data.description,
       totalSeats,
       availableSeats,
