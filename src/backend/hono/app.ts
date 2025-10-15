@@ -8,6 +8,10 @@ import { registerAuthRoutes } from "@/features/auth/backend/route";
 import { registerConcertDetailRoutes } from "@/features/concert-detail/backend/route";
 import { registerSeatSelectionRoutes } from "@/features/seat-selection/backend/route";
 import { registerFavoriteRoutes } from "@/features/favorites/backend/route";
+import { registerReservationLookupRoutes } from "@/features/reservations/lookup/backend/route";
+import { registerBookingConfirmationRoutes } from "@/features/booking/confirmation/backend/route";
+import { registerMypageRoutes } from "@/features/mypage/backend/route";
+import { registerBookingRoutes } from "@/features/booking/backend/route";
 import type { AppEnv } from "@/backend/hono/context";
 
 let singletonApp: Hono<AppEnv> | null = null;
@@ -29,6 +33,10 @@ export const createHonoApp = () => {
   registerConcertDetailRoutes(app);
   registerSeatSelectionRoutes(app);
   registerFavoriteRoutes(app);
+  registerReservationLookupRoutes(app);
+  registerBookingConfirmationRoutes(app);
+  registerMypageRoutes(app);
+  registerBookingRoutes(app);
 
   app.notFound((c) => {
     return c.json(
