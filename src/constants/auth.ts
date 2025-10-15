@@ -1,7 +1,17 @@
 import { match } from "ts-pattern";
 
 const PUBLIC_PATHS = ["/", "/login", "/signup"] as const;
-const PUBLIC_PREFIXES = ["/_next", "/api", "/favicon", "/static", "/docs", "/images"] as const;
+const PUBLIC_PREFIXES = [
+  "/_next",
+  "/api",
+  "/favicon",
+  "/static",
+  "/docs",
+  "/images",
+  "/concerts",      // 콘서트 상세 - 비회원 접근 가능 (UC-002)
+  "/booking",       // 예약 정보 입력 - 비회원 접근 가능 (UC-006)
+  "/reservations",  // 예약 조회 - 비회원 접근 가능 (UC-009)
+] as const;
 
 export const LOGIN_PATH = "/login";
 export const SIGNUP_PATH = "/signup";
