@@ -8,7 +8,21 @@
       "Bash(git commit:*)",
       "Bash(npm run build)",
       "Bash(npm run dev)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(\"src/features/auth-modal/hooks/useAuthModal.ts\" )",
+      "Bash(\"src/features/auth-modal/hooks/useLoginMutation.ts\" )",
+      "Bash(\"src/features/auth-modal/hooks/useSignupMutation.ts\" )",
+      "Bash(\"src/features/home/hooks/useConcertList.ts\" )",
+      "Bash(\"src/features/home/hooks/useRecommendedConcerts.ts\" )",
+      "Bash(\"src/features/mypage/hooks/useMyReservations.ts\" )",
+      "Bash(\"src/features/mypage/hooks/useMyFavorites.ts\" )",
+      "Bash(\"src/features/booking/hooks/useBookingSession.ts\" )",
+      "Bash(\"src/features/booking/hooks/useBookingConfirm.ts\" )",
+      "Bash(\"src/features/seat-selection/hooks/useSelectedSeatsStore.ts\" )",
+      "Bash(\"src/features/seat-selection/hooks/useSeatHoldMutation.ts\" )",
+      "Bash(\"src/features/seat-selection/hooks/useSeatReleaseMutation.ts\" )",
+      "Bash(\"src/features/common/hooks/useFavoriteToggle.ts\" )",
+      "Bash(\"src/features/favorites/hooks/useFavoriteToggle.ts\")"
     ],
     "deny": [],
     "ask": []

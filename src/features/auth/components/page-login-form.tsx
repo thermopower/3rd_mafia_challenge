@@ -15,8 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { extractApiErrorMessage } from "@/lib/remote/api-client";
-import { useLoginMutation } from "@/features/auth-modal/hooks/useLoginMutation";
+import { useAuth } from "@/features/common/contexts/auth-context";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import {
   LoginRequestSchema,
@@ -30,7 +29,7 @@ type PageLoginFormProps = {
 export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
   const router = useRouter();
   const { refresh } = useCurrentUser();
-  const loginMutation = useLoginMutation();
+  const { state, login } = useAuth();
 
   const form = useForm<LoginRequest>({
     resolver: zodResolver(LoginRequestSchema),
@@ -41,18 +40,15 @@ export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
   });
 
   const onSubmit = async (data: LoginRequest) => {
-    try {
-      await loginMutation.mutateAsync(data);
+    await login(data.email, data.password);
+
+    if (state.error) {
+      toast.error(state.error);
+    } else if (state.isLoggedIn) {
       await refresh();
       toast.success("로그인 성공! 환영합니다!");
       const redirectTo = redirectedFrom ?? "/";
       router.push(redirectTo);
-    } catch (error) {
-      const errorMessage = extractApiErrorMessage(
-        error,
-        "로그인에 실패했습니다."
-      );
-      toast.error(errorMessage);
     }
   };
 
@@ -70,7 +66,7 @@ export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
                   type="email"
                   placeholder="example@email.com"
                   {...field}
-                  disabled={loginMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -89,7 +85,7 @@ export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
                   type="password"
                   placeholder="비밀번호를 입력하세요"
                   {...field}
-                  disabled={loginMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -100,9 +96,9 @@ export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
         <Button
           type="submit"
           className="w-full"
-          disabled={loginMutation.isPending}
+          disabled={state.isLoading}
         >
-          {loginMutation.isPending && (
+          {state.isLoading && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
           로그인

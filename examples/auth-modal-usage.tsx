@@ -9,10 +9,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
+import { useAuth } from "@/features/common/contexts/auth-context";
 
 export default function AuthModalUsageExample() {
-  const { openModal } = useAuthModal();
+  const { openAuthModal } = useAuth();
 
   return (
     <div className="container mx-auto py-12 space-y-8">
@@ -25,14 +25,14 @@ export default function AuthModalUsageExample() {
 
       <div className="flex gap-4">
         <Button
-          onClick={() => openModal("login")}
+          onClick={() => openAuthModal("login")}
           size="lg"
         >
           로그인 모달 열기
         </Button>
 
         <Button
-          onClick={() => openModal("signup")}
+          onClick={() => openAuthModal("signup")}
           variant="outline"
           size="lg"
         >
@@ -46,13 +46,13 @@ export default function AuthModalUsageExample() {
         <div className="space-y-2">
           <h3 className="text-lg font-medium">1. 기본 사용</h3>
           <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
+{`import { useAuth } from "@/features/common/contexts/auth-context";
 
 function MyComponent() {
-  const { openModal } = useAuthModal();
+  const { openAuthModal } = useAuth();
 
   return (
-    <button onClick={() => openModal("login")}>
+    <button onClick={() => openAuthModal("login")}>
       로그인
     </button>
   );
@@ -64,12 +64,12 @@ function MyComponent() {
           <h3 className="text-lg font-medium">2. Redirect와 함께 사용</h3>
           <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
 {`// 로그인 후 특정 페이지로 이동하고 싶을 때
-const { openModal } = useAuthModal();
+const { openAuthModal } = useAuth();
 
 // 찜하기 버튼에서 사용
 const handleFavorite = () => {
   if (!isLoggedIn) {
-    openModal("login", "/concert/123");
+    openAuthModal("login", "/concert/123");
   } else {
     // 찜하기 로직
   }
@@ -80,10 +80,10 @@ const handleFavorite = () => {
         <div className="space-y-2">
           <h3 className="text-lg font-medium">3. 모달 닫기</h3>
           <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`const { closeModal } = useAuthModal();
+{`const { closeAuthModal } = useAuth();
 
 // 모달을 프로그래밍적으로 닫기
-closeModal();`}
+closeAuthModal();`}
           </pre>
         </div>
       </div>

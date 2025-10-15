@@ -51,7 +51,7 @@ export const PurchaserForm = ({
   });
 
   // 이전 defaultValues를 추적
-  const prevDefaultValuesRef = useRef<Partial<PurchaserFormValues> | undefined>();
+  const prevDefaultValuesRef = useRef<Partial<PurchaserFormValues> | undefined>(undefined);
 
   // defaultValues가 실제로 변경되었을 때만 폼 리셋
   useEffect(() => {

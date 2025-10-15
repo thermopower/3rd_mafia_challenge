@@ -1,6 +1,7 @@
 "use client";
 
-import { useRecommendedConcerts } from "@/features/home/hooks/useRecommendedConcerts";
+import { useEffect } from "react";
+import { useConcert } from "@/features/common/contexts/concert-context";
 import { ConcertCard } from "@/features/home/components/concert-card";
 
 interface RecommendedConcertsProps {
@@ -10,9 +11,13 @@ interface RecommendedConcertsProps {
 export const RecommendedConcerts = ({
   currentConcertId,
 }: RecommendedConcertsProps) => {
-  const { data, isLoading, isError } = useRecommendedConcerts();
+  const { state, fetchRecommendedConcerts } = useConcert();
 
-  if (isLoading) {
+  useEffect(() => {
+    fetchRecommendedConcerts();
+  }, [fetchRecommendedConcerts]);
+
+  if (state.status === 'loading' && state.recommendedConcerts.length === 0) {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-bold">추천 공연</h2>
@@ -28,12 +33,12 @@ export const RecommendedConcerts = ({
     );
   }
 
-  if (isError || !data) {
+  if (state.status === 'error' || state.recommendedConcerts.length === 0) {
     return null;
   }
 
   // 현재 콘서트 제외
-  const filteredConcerts = data.concerts.filter(
+  const filteredConcerts = state.recommendedConcerts.filter(
     (concert) => concert.id !== currentConcertId
   );
 

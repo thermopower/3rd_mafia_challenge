@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { extractApiErrorMessage } from '@/lib/remote/api-client';
-import { useBookingSession } from '../hooks/useBookingSession';
+import { useBooking } from '@/features/common/contexts/booking-context';
 import { useBookingCountdown } from '../hooks/useBookingCountdown';
-import { useBookingConfirm } from '../hooks/useBookingConfirm';
 import { BookingSummaryPanel } from './booking-summary-panel';
 import { PurchaserForm, type PurchaserFormValues } from './purchaser-form';
 import { AgreementSection } from './agreement-section';
@@ -17,13 +15,16 @@ import { AlertCircle } from 'lucide-react';
 
 export const BookingLayout = () => {
   const router = useRouter();
-  const { data: session, isLoading, error } = useBookingSession();
-  const { isExpired } = useBookingCountdown(session?.expiresAt);
-  const confirmMutation = useBookingConfirm();
+  const { state, fetchBookingSession, confirmBooking } = useBooking();
+  const { isExpired } = useBookingCountdown(state.bookingSession?.expiresAt);
 
   const [agreed, setAgreed] = useState(false);
   const [formValues, setFormValues] = useState<PurchaserFormValues | null>(null);
   const [isFormValid, setIsFormValid] = useState(false);
+
+  useEffect(() => {
+    fetchBookingSession(state.holdInfo?.holdId);
+  }, [fetchBookingSession, state.holdInfo?.holdId]);
 
   const handleExpire = () => {
     toast.error('선점 시간이 만료되었습니다. 좌석 선택 페이지로 이동합니다.');
@@ -32,32 +33,30 @@ export const BookingLayout = () => {
     }, 2000);
   };
 
-  const handleConfirm = () => {
-    if (!session || !formValues || !agreed) {
+  const handleConfirm = async () => {
+    if (!state.bookingSession || !formValues || !agreed) {
       toast.error('모든 필수 정보를 입력해주세요.');
       return;
     }
 
-    confirmMutation.mutate(
-      {
-        holdId: session.holdId,
+    try {
+      await confirmBooking({
+        holdId: state.bookingSession.holdId,
         bookerName: formValues.bookerName,
         bookerEmail: formValues.bookerEmail,
         bookerPhone: formValues.bookerPhone,
         agreedToTerms: agreed,
-      },
-      {
-        onError: (error) => {
-          toast.error(extractApiErrorMessage(error, '예매 확정에 실패했습니다.'));
-        },
-        onSuccess: () => {
-          toast.success('예매가 완료되었습니다!');
-        },
-      },
-    );
+      });
+
+      toast.success('예매가 완료되었습니다!');
+      router.push('/booking/confirmation');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '예매 확정에 실패했습니다.';
+      toast.error(errorMessage);
+    }
   };
 
-  if (isLoading) {
+  if (state.status === 'loading' && !state.bookingSession) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="grid gap-8 lg:grid-cols-3">
@@ -73,25 +72,25 @@ export const BookingLayout = () => {
     );
   }
 
-  if (error || !session) {
+  if (state.status === 'error' || !state.bookingSession) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>오류</AlertTitle>
           <AlertDescription>
-            {extractApiErrorMessage(error, '예매 정보를 불러올 수 없습니다.')}
+            {state.error || '예매 정보를 불러올 수 없습니다.'}
           </AlertDescription>
         </Alert>
       </div>
     );
   }
 
-  const prefillData = session.prefillData
+  const prefillData = state.bookingSession.prefillData
     ? {
-        bookerName: session.prefillData.name,
-        bookerEmail: session.prefillData.email,
-        bookerPhone: session.prefillData.phone,
+        bookerName: state.bookingSession.prefillData.name,
+        bookerEmail: state.bookingSession.prefillData.email,
+        bookerPhone: state.bookingSession.prefillData.phone,
       }
     : undefined;
 
@@ -105,7 +104,7 @@ export const BookingLayout = () => {
         <div className="lg:col-span-2 space-y-6">
           <PurchaserForm
             defaultValues={prefillData}
-            isLoggedIn={session.isLoggedIn}
+            isLoggedIn={state.bookingSession.isLoggedIn}
             onValuesChange={setFormValues}
             onValidityChange={setIsFormValid}
           >
@@ -119,13 +118,13 @@ export const BookingLayout = () => {
         </div>
 
         <div className="lg:sticky lg:top-4 lg:self-start">
-          <BookingSummaryPanel session={session} onExpire={handleExpire} />
+          <BookingSummaryPanel session={state.bookingSession} onExpire={handleExpire} />
         </div>
       </div>
 
       <PaymentCTA
         onConfirm={handleConfirm}
-        isLoading={confirmMutation.isPending}
+        isLoading={state.status === 'confirming'}
         disabled={!canConfirm}
         isExpired={isExpired}
       />

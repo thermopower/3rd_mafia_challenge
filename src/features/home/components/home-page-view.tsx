@@ -6,7 +6,7 @@ import { HeroSearchSection } from './hero-search-section';
 import { ConcertGrid } from './concert-grid';
 import { HomeSkeleton } from './home-skeleton';
 import { useConcert } from '@/features/common/contexts/concert-context';
-import { useFavoriteToggle } from '@/features/favorites/hooks/useFavoriteToggle';
+import { useUser } from '@/features/common/contexts/user-context';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
 import { useAuth } from '@/features/common/contexts/auth-context';
 import type { ConcertSort } from '../lib/dto';
@@ -22,26 +22,13 @@ export const HomePageView = () => {
     setFilter,
     clearFilters,
   } = useConcert();
+  const { toggleFavorite } = useUser();
 
   // 초기 데이터 로드
   useEffect(() => {
     fetchConcerts();
     fetchRecommendedConcerts();
   }, [fetchConcerts, fetchRecommendedConcerts]);
-
-  // 찜하기 토글
-  const favoriteToggle = useFavoriteToggle({
-    onSuccess: (isFavorite) => {
-      console.info(isFavorite ? '찜 목록에 추가되었습니다' : '찜 목록에서 제거되었습니다');
-    },
-    onError: (error) => {
-      alert(`찜하기 실패: ${error}`);
-    },
-    onUnauthorized: () => {
-      alert('로그인이 필요한 기능입니다');
-      openAuthModal('login');
-    },
-  });
 
   // 검색 핸들러
   const handleSearch = useCallback((keyword: string) => {
@@ -63,16 +50,21 @@ export const HomePageView = () => {
 
   // 찜하기 핸들러
   const handleFavoriteToggle = useCallback(
-    (concertId: string, isFavorite: boolean) => {
+    async (concertId: string, isFavorite: boolean) => {
       if (!isAuthenticated) {
         alert('로그인이 필요한 기능입니다');
         openAuthModal('login');
         return;
       }
 
-      favoriteToggle.mutate({ concertId });
+      try {
+        await toggleFavorite(concertId);
+        console.info(isFavorite ? '찜 목록에서 제거되었습니다' : '찜 목록에 추가되었습니다');
+      } catch (error) {
+        alert(`찜하기 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      }
     },
-    [isAuthenticated, openAuthModal, favoriteToggle]
+    [isAuthenticated, openAuthModal, toggleFavorite]
   );
 
   // 초기 로딩 상태

@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
-import { useMyReservations } from "@/features/mypage/hooks/useMyReservations";
+import { useEffect } from "react";
+import { useUser } from "@/features/common/contexts/user-context";
 import { ReservationCard } from "./reservation-card";
 import { EmptyState } from "./empty-state";
 import { ListSkeleton } from "./list-skeleton";
@@ -9,10 +9,18 @@ import { Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const ReservationsContent = () => {
-  const { data } = useMyReservations();
+  const { state, fetchMyReservations } = useUser();
   const router = useRouter();
 
-  if (data.reservations.length === 0) {
+  useEffect(() => {
+    fetchMyReservations();
+  }, [fetchMyReservations]);
+
+  if (state.status === 'loading') {
+    return <ListSkeleton count={3} />;
+  }
+
+  if (state.myReservations.length === 0) {
     return (
       <EmptyState
         icon={Calendar}
@@ -26,7 +34,7 @@ const ReservationsContent = () => {
 
   return (
     <div className="space-y-4">
-      {data.reservations.map((reservation) => (
+      {state.myReservations.map((reservation) => (
         <ReservationCard key={reservation.id} reservation={reservation} />
       ))}
     </div>
@@ -34,9 +42,5 @@ const ReservationsContent = () => {
 };
 
 export const ReservationsPanel = () => {
-  return (
-    <Suspense fallback={<ListSkeleton count={3} />}>
-      <ReservationsContent />
-    </Suspense>
-  );
+  return <ReservationsContent />;
 };

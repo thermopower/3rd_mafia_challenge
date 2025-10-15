@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Calendar, MapPin, Heart } from "lucide-react";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { FavoriteConcertItem } from "@/features/mypage/lib/dto";
-import { useFavoriteToggle } from "@/features/common/hooks/useFavoriteToggle";
+import { useUser } from "@/features/common/contexts/user-context";
 import { useRouter } from "next/navigation";
 
 interface FavoriteConcertCardProps {
@@ -18,7 +19,8 @@ export const FavoriteConcertCard = ({
   concert,
 }: FavoriteConcertCardProps) => {
   const router = useRouter();
-  const favoriteToggle = useFavoriteToggle();
+  const { toggleFavorite } = useUser();
+  const [isPending, setIsPending] = useState(false);
 
   const thumbnailUrl =
     concert.thumbnailUrl ||
@@ -28,9 +30,16 @@ export const FavoriteConcertCard = ({
     ? format(new Date(concert.concertDate), "yyyy.MM.dd (E)", { locale: ko })
     : "일정 미정";
 
-  const handleUnfavorite = (e: React.MouseEvent) => {
+  const handleUnfavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    favoriteToggle.mutate({ concertId: concert.concertId });
+    setIsPending(true);
+    try {
+      await toggleFavorite(concert.concertId);
+    } catch (error) {
+      console.error("찜 해제 실패:", error);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const handleCardClick = () => {
@@ -66,7 +75,7 @@ export const FavoriteConcertCard = ({
             size="icon"
             className="absolute top-2 right-2 bg-white/90 hover:bg-white"
             onClick={handleUnfavorite}
-            disabled={favoriteToggle.isPending}
+            disabled={isPending}
             aria-label="찜 해제"
           >
             <Heart className="w-5 h-5 fill-red-500 text-red-500" />

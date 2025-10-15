@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
-import { useMyFavorites } from "@/features/mypage/hooks/useMyFavorites";
+import { useEffect } from "react";
+import { useUser } from "@/features/common/contexts/user-context";
 import { FavoriteConcertCard } from "./favorite-concert-card";
 import { EmptyState } from "./empty-state";
 import { ListSkeleton } from "./list-skeleton";
@@ -9,10 +9,18 @@ import { Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const FavoritesContent = () => {
-  const { data } = useMyFavorites();
+  const { state, fetchMyFavorites } = useUser();
   const router = useRouter();
 
-  if (data.favorites.length === 0) {
+  useEffect(() => {
+    fetchMyFavorites();
+  }, [fetchMyFavorites]);
+
+  if (state.status === 'loading') {
+    return <ListSkeleton count={3} />;
+  }
+
+  if (state.myFavorites.length === 0) {
     return (
       <EmptyState
         icon={Heart}
@@ -26,7 +34,7 @@ const FavoritesContent = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {data.favorites.map((concert) => (
+      {state.myFavorites.map((concert) => (
         <FavoriteConcertCard key={concert.id} concert={concert} />
       ))}
     </div>
@@ -34,9 +42,5 @@ const FavoritesContent = () => {
 };
 
 export const FavoritesPanel = () => {
-  return (
-    <Suspense fallback={<ListSkeleton count={3} />}>
-      <FavoritesContent />
-    </Suspense>
-  );
+  return <FavoritesContent />;
 };

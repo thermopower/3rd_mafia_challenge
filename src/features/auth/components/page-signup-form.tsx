@@ -15,8 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { extractApiErrorMessage } from "@/lib/remote/api-client";
-import { useSignupMutation } from "@/features/auth-modal/hooks/useSignupMutation";
+import { useAuth } from "@/features/common/contexts/auth-context";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import {
   SignupRequestSchema,
@@ -30,7 +29,7 @@ type PageSignupFormProps = {
 export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
   const router = useRouter();
   const { refresh } = useCurrentUser();
-  const signupMutation = useSignupMutation();
+  const { state, signup } = useAuth();
 
   const form = useForm<SignupRequest>({
     resolver: zodResolver(SignupRequestSchema),
@@ -43,18 +42,15 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
   });
 
   const onSubmit = async (data: SignupRequest) => {
-    try {
-      await signupMutation.mutateAsync(data);
+    await signup(data.email, data.password, data.fullName);
+
+    if (state.error) {
+      toast.error(state.error);
+    } else if (state.isLoggedIn) {
       await refresh();
       toast.success("회원가입이 완료되었습니다. 환영합니다!");
       const redirectTo = redirectedFrom ?? "/";
       router.push(redirectTo);
-    } catch (error) {
-      const errorMessage = extractApiErrorMessage(
-        error,
-        "회원가입에 실패했습니다."
-      );
-      toast.error(errorMessage);
     }
   };
 
@@ -72,7 +68,7 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
                   type="email"
                   placeholder="example@email.com"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -91,7 +87,7 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
                   type="password"
                   placeholder="8자 이상, 숫자와 특수문자 포함"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -110,7 +106,7 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
                   type="text"
                   placeholder="홍길동"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -129,7 +125,7 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
                   type="tel"
                   placeholder="010-1234-5678"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -140,9 +136,9 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
         <Button
           type="submit"
           className="w-full"
-          disabled={signupMutation.isPending}
+          disabled={state.isLoading}
         >
-          {signupMutation.isPending && (
+          {state.isLoading && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
           회원가입
