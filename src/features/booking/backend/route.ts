@@ -31,10 +31,11 @@ export const registerBookingRoutes = (app: Hono<AppEnv>) => {
 
     // TODO: 실제 인증 구현 후 userId 가져오기
     const userId = c.req.header('x-user-id') || undefined;
+    const holdId = c.req.header('x-hold-id') || undefined;
 
-    logger.info('Fetching current booking session');
+    logger.info(`Fetching current booking session (holdId: ${holdId || 'none'})`);
 
-    const result = await getCurrentBookingSession(supabase, userId);
+    const result = await getCurrentBookingSession(supabase, userId, holdId);
 
     if (!result.ok) {
       const errorResult = result as ErrorResult<

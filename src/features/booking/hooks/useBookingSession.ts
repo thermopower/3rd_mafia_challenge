@@ -2,13 +2,16 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient, extractApiErrorMessage } from '@/lib/remote/api-client';
+import { useSelectedSeatsStore } from '@/features/seat-selection/hooks/useSelectedSeatsStore';
 import {
   BookingSessionResponseSchema,
   type BookingSessionResponse,
 } from '../lib/dto';
 
-const fetchBookingSession = async (): Promise<BookingSessionResponse> => {
-  const { data } = await apiClient.get('/api/reservations/current');
+const fetchBookingSession = async (holdId?: string): Promise<BookingSessionResponse> => {
+  const { data } = await apiClient.get('/api/reservations/current', {
+    headers: holdId ? { 'x-hold-id': holdId } : undefined,
+  });
 
   const parsed = BookingSessionResponseSchema.safeParse(data);
 
@@ -20,9 +23,11 @@ const fetchBookingSession = async (): Promise<BookingSessionResponse> => {
 };
 
 export const useBookingSession = () => {
+  const holdInfo = useSelectedSeatsStore((state) => state.holdInfo);
+
   return useQuery({
-    queryKey: ['booking-session'],
-    queryFn: fetchBookingSession,
+    queryKey: ['booking-session', holdInfo?.holdId],
+    queryFn: () => fetchBookingSession(holdInfo?.holdId),
     staleTime: 1000 * 60,
     retry: 1,
   });

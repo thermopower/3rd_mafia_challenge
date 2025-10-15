@@ -27,56 +27,18 @@ const CONCERTS_TABLE = 'concerts';
 const CONCERT_SEATS_TABLE = 'concert_seats';
 const PROFILES_TABLE = 'profiles';
 
-export const getCurrentBookingSession = async (
+/**
+ * Helper function to build booking session response from order data
+ */
+const buildBookingSessionResponse = async (
   client: SupabaseClient,
+  order: any,
   userId?: string,
 ): Promise<
   HandlerResult<BookingSessionResponse, BookingServiceError, unknown>
 > => {
-  let query = client
-    .from(RESERVATION_ORDERS_TABLE)
-    .select('*')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false });
-
-  if (userId) {
-    query = query.eq('user_id', userId);
-  } else {
-    query = query.is('user_id', null);
-  }
-
-  const { data: orders, error: ordersError } = await query.limit(1);
-
-  if (ordersError) {
-    return failure(
-      500,
-      bookingErrorCodes.fetchError,
-      ordersError.message,
-    );
-  }
-
-  if (!orders || orders.length === 0) {
-    return failure(
-      404,
-      bookingErrorCodes.sessionNotFound,
-      'No active booking session found',
-    );
-  }
-
-  const order = orders[0];
-  const parsed = ReservationOrderRowSchema.safeParse(order);
-
-  if (!parsed.success) {
-    return failure(
-      500,
-      bookingErrorCodes.validationError,
-      'Invalid order data',
-      parsed.error.format(),
-    );
-  }
-
-  if (parsed.data.hold_expires_at) {
-    const expiresAt = new Date(parsed.data.hold_expires_at);
+  if (order.hold_expires_at) {
+    const expiresAt = new Date(order.hold_expires_at);
     if (expiresAt < new Date()) {
       return failure(
         410,
@@ -89,7 +51,7 @@ export const getCurrentBookingSession = async (
   const { data: concert, error: concertError } = await client
     .from(CONCERTS_TABLE)
     .select('id, title')
-    .eq('id', parsed.data.concert_id)
+    .eq('id', order.concert_id)
     .maybeSingle();
 
   if (concertError || !concert) {
@@ -103,7 +65,7 @@ export const getCurrentBookingSession = async (
   const { data: orderSeats, error: seatsError } = await client
     .from(RESERVATION_ORDER_SEATS_TABLE)
     .select('seat_id, price')
-    .eq('order_id', parsed.data.id)
+    .eq('order_id', order.id)
     .eq('is_active', true);
 
   if (seatsError || !orderSeats || orderSeats.length === 0) {
@@ -156,13 +118,13 @@ export const getCurrentBookingSession = async (
   }
 
   const response: BookingSessionResponse = {
-    holdId: parsed.data.id,
-    concertId: parsed.data.concert_id,
+    holdId: order.id,
+    concertId: order.concert_id,
     concertTitle: concert.title,
-    concertImageUrl: `https://picsum.photos/seed/${parsed.data.concert_id}/320/200`,
+    concertImageUrl: `https://picsum.photos/seed/${order.concert_id}/320/200`,
     seats: bookingSeats,
     totalPrice,
-    expiresAt: parsed.data.hold_expires_at || new Date().toISOString(),
+    expiresAt: order.hold_expires_at || new Date().toISOString(),
     isLoggedIn: !!userId,
     prefillData,
   };
@@ -179,6 +141,97 @@ export const getCurrentBookingSession = async (
   }
 
   return success(validated.data);
+};
+
+export const getCurrentBookingSession = async (
+  client: SupabaseClient,
+  userId?: string,
+  holdId?: string,
+): Promise<
+  HandlerResult<BookingSessionResponse, BookingServiceError, unknown>
+> => {
+  // holdId가 있으면 직접 조회
+  if (holdId) {
+    const { data: order, error: orderError } = await client
+      .from(RESERVATION_ORDERS_TABLE)
+      .select('*')
+      .eq('id', holdId)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (orderError) {
+      return failure(
+        500,
+        bookingErrorCodes.fetchError,
+        orderError.message,
+      );
+    }
+
+    if (!order) {
+      return failure(
+        404,
+        bookingErrorCodes.sessionNotFound,
+        'No active booking session found with provided hold ID',
+      );
+    }
+
+    const parsed = ReservationOrderRowSchema.safeParse(order);
+    if (!parsed.success) {
+      return failure(
+        500,
+        bookingErrorCodes.validationError,
+        'Invalid order data',
+        parsed.error.format(),
+      );
+    }
+
+    return buildBookingSessionResponse(client, parsed.data, userId);
+  }
+
+  // holdId가 없으면 userId 또는 비회원으로 조회
+  let query = client
+    .from(RESERVATION_ORDERS_TABLE)
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  } else {
+    query = query.is('user_id', null);
+  }
+
+  const { data: orders, error: ordersError } = await query.limit(1);
+
+  if (ordersError) {
+    return failure(
+      500,
+      bookingErrorCodes.fetchError,
+      ordersError.message,
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return failure(
+      404,
+      bookingErrorCodes.sessionNotFound,
+      'No active booking session found',
+    );
+  }
+
+  const order = orders[0];
+  const parsed = ReservationOrderRowSchema.safeParse(order);
+
+  if (!parsed.success) {
+    return failure(
+      500,
+      bookingErrorCodes.validationError,
+      'Invalid order data',
+      parsed.error.format(),
+    );
+  }
+
+  return buildBookingSessionResponse(client, parsed.data, userId);
 };
 
 export const previewBooking = async (
