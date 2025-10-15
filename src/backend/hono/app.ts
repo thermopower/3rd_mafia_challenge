@@ -3,6 +3,11 @@ import { errorBoundary } from "@/backend/middleware/error";
 import { withAppContext } from "@/backend/middleware/context";
 import { withSupabase } from "@/backend/middleware/supabase";
 import { registerExampleRoutes } from "@/features/example/backend/route";
+import { registerHomeRoutes } from "@/features/home/backend/route";
+import { registerAuthRoutes } from "@/features/auth/backend/route";
+import { registerConcertDetailRoutes } from "@/features/concert-detail/backend/route";
+import { registerSeatSelectionRoutes } from "@/features/seat-selection/backend/route";
+import { registerFavoriteRoutes } from "@/features/favorites/backend/route";
 import type { AppEnv } from "@/backend/hono/context";
 
 let singletonApp: Hono<AppEnv> | null = null;
@@ -19,6 +24,11 @@ export const createHonoApp = () => {
   app.use("*", withSupabase());
 
   registerExampleRoutes(app);
+  registerHomeRoutes(app);
+  registerAuthRoutes(app);
+  registerConcertDetailRoutes(app);
+  registerSeatSelectionRoutes(app);
+  registerFavoriteRoutes(app);
 
   app.notFound((c) => {
     return c.json(
