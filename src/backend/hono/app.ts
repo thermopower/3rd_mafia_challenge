@@ -34,9 +34,11 @@ export const createHonoApp = () => {
   registerSeatSelectionRoutes(app);
   registerFavoriteRoutes(app);
   registerReservationLookupRoutes(app);
+  // 주의: BookingRoutes를 BookingConfirmationRoutes보다 먼저 등록해야 함
+  // /api/reservations/current가 /api/reservations/:orderId보다 먼저 매칭되어야 함
+  registerBookingRoutes(app);
   registerBookingConfirmationRoutes(app);
   registerMypageRoutes(app);
-  registerBookingRoutes(app);
 
   app.notFound((c) => {
     return c.json(

@@ -196,7 +196,7 @@ export const fetchMyFavorites = async (
       concerts (
         id,
         title,
-        venue,
+        venue_name,
         thumbnail_url
       )
     `
@@ -269,7 +269,7 @@ export const fetchMyFavorites = async (
       concertId: fav.concert_id,
       concertTitle: concert?.title || "알 수 없는 콘서트",
       concertDate: schedule?.date || null,
-      concertVenue: concert?.venue || null,
+      concertVenue: concert?.venue_name || null,
       thumbnailUrl: concert?.thumbnail_url || null,
       isSoldOut: schedule?.isSoldOut || false,
       isUpcoming: schedule?.isUpcoming || false,

@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   Form,
   FormControl,
@@ -50,17 +50,32 @@ export const PurchaserForm = ({
     mode: 'onChange', // 입력할 때마다 validation 실행
   });
 
-  // defaultValues가 변경되면 폼 리셋
+  // 이전 defaultValues를 추적
+  const prevDefaultValuesRef = useRef<Partial<PurchaserFormValues> | undefined>();
+
+  // defaultValues가 실제로 변경되었을 때만 폼 리셋
   useEffect(() => {
-    if (defaultValues) {
+    if (!defaultValues) return;
+
+    const prev = prevDefaultValuesRef.current;
+
+    // 이전 값과 비교해서 실제로 변경되었을 때만 reset
+    const hasChanged =
+      !prev ||
+      prev.bookerName !== defaultValues.bookerName ||
+      prev.bookerEmail !== defaultValues.bookerEmail ||
+      prev.bookerPhone !== defaultValues.bookerPhone;
+
+    if (hasChanged) {
       form.reset({
         bookerName: defaultValues.bookerName ?? '',
         bookerEmail: defaultValues.bookerEmail ?? '',
         bookerPhone: defaultValues.bookerPhone ?? '',
       });
+      prevDefaultValuesRef.current = defaultValues;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultValues]);
+  }, [defaultValues?.bookerName, defaultValues?.bookerEmail, defaultValues?.bookerPhone]);
 
   // 폼 값이 변경될 때마다 실시간으로 추적
   useEffect(() => {

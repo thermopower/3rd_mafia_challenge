@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { extractApiErrorMessage } from '@/lib/remote/api-client';
@@ -87,15 +87,13 @@ export const BookingLayout = () => {
     );
   }
 
-  const prefillData = useMemo(() => {
-    return session.prefillData
-      ? {
-          bookerName: session.prefillData.name,
-          bookerEmail: session.prefillData.email,
-          bookerPhone: session.prefillData.phone,
-        }
-      : undefined;
-  }, [session.prefillData]);
+  const prefillData = session.prefillData
+    ? {
+        bookerName: session.prefillData.name,
+        bookerEmail: session.prefillData.email,
+        bookerPhone: session.prefillData.phone,
+      }
+    : undefined;
 
   const canConfirm = agreed && isFormValid && formValues && !isExpired;
 
