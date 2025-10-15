@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface SelectedSeat {
   id: string;
@@ -32,10 +33,12 @@ type SelectedSeatsStore = SelectedSeatsState & SelectedSeatsActions;
 
 const MAX_SEATS_PER_BOOKING = 4;
 
-export const useSelectedSeatsStore = create<SelectedSeatsStore>((set, get) => ({
-  selectedSeats: [],
-  holdInfo: null,
-  maxSeats: MAX_SEATS_PER_BOOKING,
+export const useSelectedSeatsStore = create<SelectedSeatsStore>()(
+  persist(
+    (set, get) => ({
+      selectedSeats: [],
+      holdInfo: null,
+      maxSeats: MAX_SEATS_PER_BOOKING,
 
   selectSeat: (seat: SelectedSeat) => {
     const { selectedSeats, maxSeats } = get();
@@ -87,4 +90,12 @@ export const useSelectedSeatsStore = create<SelectedSeatsStore>((set, get) => ({
     const { selectedSeats } = get();
     return selectedSeats.some((s) => s.id === seatId);
   },
-}));
+}),
+    {
+      name: 'selected-seats-storage',
+      partialize: (state) => ({
+        holdInfo: state.holdInfo,
+      }),
+    }
+  )
+);
