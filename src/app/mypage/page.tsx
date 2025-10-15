@@ -4,19 +4,19 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { MyPageView } from "@/features/mypage/components/my-page-view";
-import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
+import { useAuth } from "@/features/common/contexts/auth-context";
 
 export default function MyPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useCurrentUser();
-  const { openModal } = useAuthModal();
+  const { openAuthModal } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      openModal("login", "/mypage");
+      openAuthModal("login", "/mypage");
       router.push("/");
     }
-  }, [isAuthenticated, isLoading, router, openModal]);
+  }, [isAuthenticated, isLoading, router, openAuthModal]);
 
   if (isLoading) {
     return (

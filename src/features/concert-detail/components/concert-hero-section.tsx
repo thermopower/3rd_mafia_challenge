@@ -1,13 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ConcertDetailResponse } from "@/features/concert-detail/lib/dto";
 import { AvailabilityBadge } from "./availability-badge";
-import { useFavoriteToggle } from "@/features/common/hooks/useFavoriteToggle";
+import { useUser } from "@/features/common/contexts/user-context";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
-import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
+import { useAuth } from "@/features/common/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
 interface ConcertHeroSectionProps {
@@ -16,18 +17,24 @@ interface ConcertHeroSectionProps {
 
 export const ConcertHeroSection = ({ concert }: ConcertHeroSectionProps) => {
   const { user } = useCurrentUser();
-  const { openModal } = useAuthModal();
-  const favoriteToggle = useFavoriteToggle();
+  const { openAuthModal } = useAuth();
+  const { toggleFavorite } = useUser();
+  const [isPending, setIsPending] = useState(false);
 
-  const handleFavoriteClick = () => {
+  const handleFavoriteClick = async () => {
     if (!user) {
-      openModal("login");
+      openAuthModal("login");
       return;
     }
 
-    favoriteToggle.mutate({
-      concertId: concert.id,
-    });
+    setIsPending(true);
+    try {
+      await toggleFavorite(concert.id);
+    } catch (error) {
+      console.error("찜하기 실패:", error);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -62,7 +69,7 @@ export const ConcertHeroSection = ({ concert }: ConcertHeroSectionProps) => {
             variant={concert.isFavorite ? "default" : "outline"}
             size="icon"
             onClick={handleFavoriteClick}
-            disabled={favoriteToggle.isPending}
+            disabled={isPending}
             aria-label={concert.isFavorite ? "찜 취소" : "찜하기"}
             className={cn(
               "shrink-0",
