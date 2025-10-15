@@ -1,50 +1,37 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { HomeHeader } from './home-header';
 import { HeroSearchSection } from './hero-search-section';
 import { ConcertGrid } from './concert-grid';
 import { HomeSkeleton } from './home-skeleton';
-import { useConcertList } from '../hooks/useConcertList';
-import { useRecommendedConcerts } from '../hooks/useRecommendedConcerts';
+import { useConcert } from '@/features/common/contexts/concert-context';
 import { useFavoriteToggle } from '@/features/favorites/hooks/useFavoriteToggle';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
-import { useAuthModal } from '@/features/auth-modal/hooks/useAuthModal';
+import { useAuth } from '@/features/common/contexts/auth-context';
 import type { ConcertSort } from '../lib/dto';
 
 export const HomePageView = () => {
   const { isAuthenticated } = useCurrentUser();
-  const { openModal } = useAuthModal();
-
-  // 검색 및 필터 상태
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [sortOption, setSortOption] = useState<ConcertSort>('latest');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // 공연 목록 조회
+  const { openAuthModal } = useAuth();
   const {
-    data: concertListData,
-    isLoading: isConcertsLoading,
-    isError: isConcertsError,
-    error: concertsError,
-  } = useConcertList({
-    search: searchKeyword || undefined,
-    sort: sortOption,
-    page: currentPage,
-    limit: 20,
-  });
+    state: concertState,
+    fetchConcerts,
+    fetchRecommendedConcerts,
+    setSearchTerm,
+    setFilter,
+    clearFilters,
+  } = useConcert();
 
-  // 추천 공연 조회
-  const {
-    data: recommendedData,
-    isLoading: isRecommendedLoading,
-    isError: isRecommendedError,
-  } = useRecommendedConcerts();
+  // 초기 데이터 로드
+  useEffect(() => {
+    fetchConcerts();
+    fetchRecommendedConcerts();
+  }, [fetchConcerts, fetchRecommendedConcerts]);
 
   // 찜하기 토글
   const favoriteToggle = useFavoriteToggle({
     onSuccess: (isFavorite) => {
-      // 성공 알림은 UI 즉시 반영으로 대체
       console.info(isFavorite ? '찜 목록에 추가되었습니다' : '찜 목록에서 제거되었습니다');
     },
     onError: (error) => {
@@ -52,38 +39,44 @@ export const HomePageView = () => {
     },
     onUnauthorized: () => {
       alert('로그인이 필요한 기능입니다');
-      openModal('login');
+      openAuthModal('login');
     },
   });
 
   // 검색 핸들러
   const handleSearch = useCallback((keyword: string) => {
-    setSearchKeyword(keyword);
-    setCurrentPage(1);
-  }, []);
+    setSearchTerm(keyword);
+    fetchConcerts({ search: keyword, page: 1 });
+  }, [setSearchTerm, fetchConcerts]);
 
   // 정렬 핸들러
   const handleSortChange = useCallback((sort: ConcertSort) => {
-    setSortOption(sort);
-    setCurrentPage(1);
-  }, []);
+    setFilter({ sort });
+    fetchConcerts({ sort, page: 1 });
+  }, [setFilter, fetchConcerts]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = useCallback(() => {
+    const nextPage = concertState.pagination.page + 1;
+    fetchConcerts({ page: nextPage });
+  }, [concertState.pagination.page, fetchConcerts]);
 
   // 찜하기 핸들러
   const handleFavoriteToggle = useCallback(
     (concertId: string, isFavorite: boolean) => {
       if (!isAuthenticated) {
         alert('로그인이 필요한 기능입니다');
-        openModal('login');
+        openAuthModal('login');
         return;
       }
 
       favoriteToggle.mutate({ concertId });
     },
-    [isAuthenticated, openModal, favoriteToggle]
+    [isAuthenticated, openAuthModal, favoriteToggle]
   );
 
   // 초기 로딩 상태
-  if (isConcertsLoading && !concertListData) {
+  if (concertState.status === 'loading' && concertState.allConcerts.length === 0) {
     return <HomeSkeleton />;
   }
 
@@ -94,19 +87,19 @@ export const HomePageView = () => {
         {/* Hero Search Section */}
         <HeroSearchSection
           onSearch={handleSearch}
-          initialValue={searchKeyword}
+          initialValue={concertState.searchTerm}
         />
 
         {/* Recommended Concerts Section */}
-        {!searchKeyword && recommendedData && recommendedData.concerts.length > 0 && (
+        {!concertState.searchTerm && concertState.recommendedConcerts.length > 0 && (
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-slate-900">추천 공연</h2>
             </div>
             <ConcertGrid
-              concerts={recommendedData.concerts}
-              isLoading={isRecommendedLoading}
-              isError={isRecommendedError}
+              concerts={concertState.recommendedConcerts}
+              isLoading={false}
+              isError={false}
               columns={3}
               emptyMessage="추천 공연이 없습니다"
               onFavoriteToggle={handleFavoriteToggle}
@@ -118,7 +111,7 @@ export const HomePageView = () => {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-slate-900">
-              {searchKeyword ? `"${searchKeyword}" 검색 결과` : '전체 공연'}
+              {concertState.searchTerm ? `"${concertState.searchTerm}" 검색 결과` : '전체 공연'}
             </h2>
 
             {/* Sort Options */}
@@ -128,7 +121,7 @@ export const HomePageView = () => {
               </label>
               <select
                 id="sort"
-                value={sortOption}
+                value={concertState.activeFilters.sort || 'latest'}
                 onChange={(e) => handleSortChange(e.target.value as ConcertSort)}
                 className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -141,12 +134,12 @@ export const HomePageView = () => {
           </div>
 
           <ConcertGrid
-            concerts={concertListData?.concerts || []}
-            isLoading={isConcertsLoading}
-            isError={isConcertsError}
-            error={concertsError as Error}
+            concerts={concertState.filteredConcerts}
+            isLoading={concertState.status === 'loading'}
+            isError={concertState.status === 'error'}
+            error={concertState.error ? new Error(concertState.error) : undefined}
             emptyMessage={
-              searchKeyword
+              concertState.searchTerm
                 ? '검색 결과가 없습니다'
                 : '등록된 공연이 없습니다'
             }
@@ -155,18 +148,18 @@ export const HomePageView = () => {
           />
 
           {/* Pagination Info */}
-          {concertListData && concertListData.concerts.length > 0 && (
+          {concertState.filteredConcerts.length > 0 && (
             <div className="flex items-center justify-between pt-6">
               <p className="text-sm text-slate-600">
-                전체 {concertListData.total}개의 공연 중 {concertListData.concerts.length}개 표시
+                전체 {concertState.pagination.total}개의 공연 중 {concertState.filteredConcerts.length}개 표시
               </p>
 
-              {concertListData.hasMore && (
+              {concertState.pagination.hasMore && (
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  onClick={handlePageChange}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  disabled={isConcertsLoading}
+                  disabled={concertState.status === 'loading'}
                 >
                   더 보기
                 </button>
