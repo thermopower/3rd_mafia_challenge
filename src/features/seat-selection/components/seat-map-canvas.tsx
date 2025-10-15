@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from '@/lib/utils';
-import { useSelectedSeatsStore } from '@/features/seat-selection/hooks/useSelectedSeatsStore';
+import { useBooking } from '@/features/common/contexts/booking-context';
 import { SeatStatus, type SeatInfo, type SeatCategory } from '@/features/seat-selection/lib/dto';
 import { Circle, CheckCircle2, XCircle } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export const SeatMapCanvas = ({
   onSeatClick,
   className,
 }: SeatMapCanvasProps) => {
-  const { selectedSeats, isSeatSelected } = useSelectedSeatsStore();
+  const { state, isSeatSelected } = useBooking();
 
   const getCategoryColor = (categoryId: string): string => {
     const category = categories.find((c) => c.id === categoryId);

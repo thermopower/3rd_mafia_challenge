@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useSelectedSeatsStore } from '@/features/seat-selection/hooks/useSelectedSeatsStore';
+import { useBooking } from '@/features/common/contexts/booking-context';
 import { SeatStatus, type SeatInfo, type SeatCategory } from '@/features/seat-selection/lib/dto';
 import { Check } from 'lucide-react';
 
@@ -20,7 +20,7 @@ export const SeatListFallback = ({
   categories,
   onSeatClick,
 }: SeatListFallbackProps) => {
-  const { isSeatSelected } = useSelectedSeatsStore();
+  const { isSeatSelected } = useBooking();
   const [sortBy, setSortBy] = useState<'label' | 'price'>('label');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
 

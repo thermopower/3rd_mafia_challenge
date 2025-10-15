@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { useSeatMap } from '@/features/seat-selection/hooks/useSeatMap';
-import { useSelectedSeatsStore } from '@/features/seat-selection/hooks/useSelectedSeatsStore';
+import { useBooking } from '@/features/common/contexts/booking-context';
 import { SeatLegend } from './seat-legend';
 import { SeatMapCanvas } from './seat-map-canvas';
 import { SeatListFallback } from './seat-list-fallback';
@@ -27,7 +27,7 @@ export const SeatSelectionView = ({
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const { data: seatMap } = useSeatMap({ concertId, scheduleId });
   const { selectSeat, deselectSeat, isSeatSelected, isMaxSeatsReached } =
-    useSelectedSeatsStore();
+    useBooking();
 
   const handleSeatClick = (seat: SeatInfo) => {
     const isSelected = isSeatSelected(seat.id);

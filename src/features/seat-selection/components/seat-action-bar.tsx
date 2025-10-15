@@ -6,11 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, AlertTriangle } from 'lucide-react';
-import { useSelectedSeatsStore } from '@/features/seat-selection/hooks/useSelectedSeatsStore';
-import { useSeatHoldMutation } from '@/features/seat-selection/hooks/useSeatHoldMutation';
-import { useSeatReleaseMutation } from '@/features/seat-selection/hooks/useSeatReleaseMutation';
+import { useBooking } from '@/features/common/contexts/booking-context';
 import { useSeatCountdown } from '@/features/seat-selection/hooks/useSeatCountdown';
-import { extractApiErrorMessage } from '@/lib/remote/api-client';
 
 interface SeatActionBarProps {
   concertId: string;
@@ -22,41 +19,38 @@ export const SeatActionBar = ({ concertId, scheduleId }: SeatActionBarProps) => 
   const [error, setError] = useState<string | null>(null);
 
   const {
-    selectedSeats,
-    holdInfo,
+    state,
+    holdSeats,
+    releaseSeats,
     resetSeats,
-    setHoldInfo,
     isMaxSeatsReached,
-  } = useSelectedSeatsStore();
-
-  const holdMutation = useSeatHoldMutation();
-  const releaseMutation = useSeatReleaseMutation();
+  } = useBooking();
 
   const { formattedTime, isExpired } = useSeatCountdown({
-    expiresAt: holdInfo?.expiresAt ?? null,
+    expiresAt: state.holdInfo?.expiresAt ?? null,
     onExpire: () => {
       handleExpire();
     },
   });
 
   const handleExpire = () => {
-    if (holdInfo) {
-      releaseMutation.mutate({ holdId: holdInfo.holdId });
+    if (state.holdInfo) {
+      releaseSeats(state.holdInfo.holdId);
     }
     resetSeats();
     setError('좌석 선점 시간이 만료되었습니다. 다시 선택해주세요.');
   };
 
   const handleReset = () => {
-    if (holdInfo) {
-      releaseMutation.mutate({ holdId: holdInfo.holdId });
+    if (state.holdInfo) {
+      releaseSeats(state.holdInfo.holdId);
     }
     resetSeats();
     setError(null);
   };
 
   const handleProceed = async () => {
-    if (selectedSeats.length === 0) {
+    if (state.selectedSeats.length === 0) {
       setError('좌석을 선택해주세요.');
       return;
     }
@@ -64,30 +58,25 @@ export const SeatActionBar = ({ concertId, scheduleId }: SeatActionBarProps) => 
     setError(null);
 
     try {
-      const result = await holdMutation.mutateAsync({
+      await holdSeats(
         concertId,
-        scheduleId,
-        seatIds: selectedSeats.map((s) => s.id),
-      });
+        state.selectedSeats.map((s) => s.id)
+      );
 
-      setHoldInfo({
-        holdId: result.holdId,
-        expiresAt: result.expiresAt,
-      });
-
+      // holdSeats가 성공하면 state.holdInfo가 자동으로 설정됨
       // 예매 정보 입력 페이지로 이동
       router.push('/booking');
     } catch (err) {
-      const message = extractApiErrorMessage(err, '좌석 선점에 실패했습니다.');
+      const message = err instanceof Error ? err.message : '좌석 선점에 실패했습니다.';
       setError(message);
     }
   };
 
-  const canProceed = selectedSeats.length > 0 && !holdMutation.isPending;
+  const canProceed = state.selectedSeats.length > 0 && state.status !== 'holding';
 
   return (
     <Card className="p-6 space-y-4">
-      {holdInfo && !isExpired && (
+      {state.holdInfo && !isExpired && (
         <div className="flex items-center justify-center gap-2 p-3 bg-blue-50 rounded-lg">
           <Clock className="w-5 h-5 text-blue-600" />
           <span className="font-semibold text-blue-900">
@@ -117,7 +106,7 @@ export const SeatActionBar = ({ concertId, scheduleId }: SeatActionBarProps) => 
           variant="outline"
           className="flex-1"
           onClick={handleReset}
-          disabled={selectedSeats.length === 0 && !holdInfo}
+          disabled={state.selectedSeats.length === 0 && !state.holdInfo}
         >
           선택 초기화
         </Button>
@@ -126,13 +115,13 @@ export const SeatActionBar = ({ concertId, scheduleId }: SeatActionBarProps) => 
           onClick={handleProceed}
           disabled={!canProceed}
         >
-          {holdMutation.isPending ? '처리 중...' : '예매 진행'}
+          {state.status === 'holding' ? '처리 중...' : '예매 진행'}
         </Button>
       </div>
 
-      {selectedSeats.length > 0 && (
+      {state.selectedSeats.length > 0 && (
         <div className="text-center text-sm text-muted-foreground">
-          {selectedSeats.length}석 선택됨
+          {state.selectedSeats.length}석 선택됨
         </div>
       )}
     </Card>
