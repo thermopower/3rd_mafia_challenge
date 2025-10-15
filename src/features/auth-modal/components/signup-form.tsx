@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { extractApiErrorMessage } from "@/lib/remote/api-client";
 import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
 import { useSignupMutation } from "@/features/auth-modal/hooks/useSignupMutation";
+import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import {
   SignupRequestSchema,
   type SignupRequest,
@@ -25,6 +26,7 @@ import {
 export const SignupForm = () => {
   const { toast } = useToast();
   const { closeModal } = useAuthModal();
+  const { refresh } = useCurrentUser();
   const signupMutation = useSignupMutation();
 
   const form = useForm<SignupRequest>({
@@ -40,6 +42,8 @@ export const SignupForm = () => {
   const onSubmit = async (data: SignupRequest) => {
     try {
       await signupMutation.mutateAsync(data);
+      // 현재 사용자 정보 갱신
+      await refresh();
       toast({
         title: "회원가입 성공",
         description: "회원가입이 완료되었습니다. 환영합니다!",

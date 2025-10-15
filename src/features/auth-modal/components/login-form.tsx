@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { extractApiErrorMessage } from "@/lib/remote/api-client";
 import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
 import { useLoginMutation } from "@/features/auth-modal/hooks/useLoginMutation";
+import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import {
   LoginRequestSchema,
   type LoginRequest,
@@ -25,6 +26,7 @@ import {
 export const LoginForm = () => {
   const { toast } = useToast();
   const { closeModal } = useAuthModal();
+  const { refresh } = useCurrentUser();
   const loginMutation = useLoginMutation();
 
   const form = useForm<LoginRequest>({
@@ -38,6 +40,8 @@ export const LoginForm = () => {
   const onSubmit = async (data: LoginRequest) => {
     try {
       await loginMutation.mutateAsync(data);
+      // 현재 사용자 정보 갱신
+      await refresh();
       toast({
         title: "로그인 성공",
         description: "환영합니다!",
