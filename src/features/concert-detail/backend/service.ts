@@ -109,24 +109,29 @@ export const getConcertDetailById = async (
 
     const totalSeats = categoryParse.data.total_seats || seatsData?.length || 0;
 
-    const { data: bookedSeatsData, error: bookedSeatsError } = await client
-      .from(RESERVATION_ORDER_SEATS_TABLE)
-      .select("seat_id")
-      .eq("is_active", true)
-      .in(
-        "seat_id",
-        seatsData?.map((s) => s.id) || []
-      );
+    let bookedCount = 0;
 
-    if (bookedSeatsError) {
-      return failure(
-        500,
-        concertDetailErrorCodes.fetchError,
-        bookedSeatsError.message
-      );
+    // Only query booked seats if there are seats to check
+    if (seatsData && seatsData.length > 0) {
+      const { data: bookedSeatsData, error: bookedSeatsError } = await client
+        .from(RESERVATION_ORDER_SEATS_TABLE)
+        .select("seat_id")
+        .eq("is_active", true)
+        .in(
+          "seat_id",
+          seatsData.map((s) => s.id)
+        );
+
+      if (bookedSeatsError) {
+        return failure(
+          500,
+          concertDetailErrorCodes.fetchError,
+          bookedSeatsError.message
+        );
+      }
+
+      bookedCount = bookedSeatsData?.length || 0;
     }
-
-    const bookedCount = bookedSeatsData?.length || 0;
     const availableSeats = totalSeats - bookedCount;
 
     seatCategories.push({
@@ -228,24 +233,27 @@ export const getConcertMetrics = async (
     const categoryTotalSeats = category.total_seats || seatsData?.length || 0;
     totalSeats += categoryTotalSeats;
 
-    const { data: bookedSeatsData, error: bookedSeatsError } = await client
-      .from(RESERVATION_ORDER_SEATS_TABLE)
-      .select("seat_id")
-      .eq("is_active", true)
-      .in(
-        "seat_id",
-        seatsData?.map((s) => s.id) || []
-      );
+    // Only query booked seats if there are seats to check
+    if (seatsData && seatsData.length > 0) {
+      const { data: bookedSeatsData, error: bookedSeatsError } = await client
+        .from(RESERVATION_ORDER_SEATS_TABLE)
+        .select("seat_id")
+        .eq("is_active", true)
+        .in(
+          "seat_id",
+          seatsData.map((s) => s.id)
+        );
 
-    if (bookedSeatsError) {
-      return failure(
-        500,
-        concertDetailErrorCodes.metricsError,
-        bookedSeatsError.message
-      );
+      if (bookedSeatsError) {
+        return failure(
+          500,
+          concertDetailErrorCodes.metricsError,
+          bookedSeatsError.message
+        );
+      }
+
+      bookedSeats += bookedSeatsData?.length || 0;
     }
-
-    bookedSeats += bookedSeatsData?.length || 0;
   }
 
   const { count: favoriteCount, error: favoriteError } = await client
