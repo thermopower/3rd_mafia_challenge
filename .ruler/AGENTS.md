@@ -9,6 +9,9 @@
 - Hono 라우트 경로는 반드시 `/api` prefix를 포함해야 함 (Next.js API 라우트가 `/api/[[...hono]]`에 위치하므로). 예: `app.post('/api/auth/signup', ...)`
 - `AppLogger`는 `info`, `error`, `warn`, `debug` 메서드만 제공함. `logger.log()` 대신 `logger.info()` 사용할 것.
 - API 응답 스키마에서 `redirectTo` 등 경로 필드는 `z.string().url()` 대신 `z.string()` 사용 (상대 경로 허용).
+- React Hook은 조건부 return/early return 이전에만 호출 (Hook 순서 규칙 위반 방지).
+- useEffect dependencies에 객체를 넣을 때는 useMemo로 참조 안정성 확보하거나 primitive 값으로 분해할 것.
+- react-hook-form의 form 객체는 useEffect dependencies에 넣지 말 것 (무한 루프 방지).
 
 ## Library
 
