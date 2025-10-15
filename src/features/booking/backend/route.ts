@@ -7,8 +7,10 @@ import {
 import {
   getLogger,
   getSupabase,
+  getConfig,
   type AppEnv,
 } from '@/backend/hono/context';
+import { createCookieBasedClient } from '@/backend/supabase/cookie-client';
 import {
   BookingPreviewRequestSchema,
   BookingConfirmRequestSchema,
@@ -28,14 +30,23 @@ export const registerBookingRoutes = (app: Hono<AppEnv>) => {
   app.get('/api/reservations/current', async (c) => {
     const supabase = getSupabase(c);
     const logger = getLogger(c);
+    const config = getConfig(c);
 
-    // TODO: 실제 인증 구현 후 userId 가져오기
-    const userId = c.req.header('x-user-id') || undefined;
+    // 쿠키에서 사용자 세션 가져오기
+    const authClient = createCookieBasedClient(
+      c,
+      config.supabase.url,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    const { data: { user } } = await authClient.auth.getUser();
+    const userId = user?.id;
+    const userEmail = user?.email;
     const holdId = c.req.header('x-hold-id') || undefined;
 
-    logger.info(`Fetching current booking session (holdId: ${holdId || 'none'})`);
+    logger.info(`Fetching current booking session (userId: ${userId || 'anonymous'}, holdId: ${holdId || 'none'})`);
 
-    const result = await getCurrentBookingSession(supabase, userId, holdId);
+    const result = await getCurrentBookingSession(supabase, userId, holdId, userEmail);
 
     if (!result.ok) {
       const errorResult = result as ErrorResult<
@@ -124,11 +135,19 @@ export const registerBookingRoutes = (app: Hono<AppEnv>) => {
 
     const supabase = getSupabase(c);
     const logger = getLogger(c);
+    const config = getConfig(c);
 
-    // TODO: 실제 인증 구현 후 userId 가져오기
-    const userId = c.req.header('x-user-id') || undefined;
+    // 쿠키에서 사용자 세션 가져오기
+    const authClient = createCookieBasedClient(
+      c,
+      config.supabase.url,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
 
-    logger.info(`Confirming booking for hold: ${parsedBody.data.holdId}`);
+    const { data: { user } } = await authClient.auth.getUser();
+    const userId = user?.id;
+
+    logger.info(`Confirming booking for hold: ${parsedBody.data.holdId} (userId: ${userId || 'anonymous'})`);
 
     const result = await confirmBooking(supabase, parsedBody.data, userId);
 

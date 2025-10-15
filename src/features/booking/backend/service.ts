@@ -34,6 +34,7 @@ const buildBookingSessionResponse = async (
   client: SupabaseClient,
   order: any,
   userId?: string,
+  userEmail?: string,
 ): Promise<
   HandlerResult<BookingSessionResponse, BookingServiceError, unknown>
 > => {
@@ -109,10 +110,11 @@ const buildBookingSessionResponse = async (
       .eq('id', userId)
       .maybeSingle();
 
-    if (profile) {
+    if (profile || userEmail) {
       prefillData = {
-        name: profile.full_name || undefined,
-        phone: profile.contact_phone || undefined,
+        name: profile?.full_name || undefined,
+        email: userEmail || undefined,
+        phone: profile?.contact_phone || undefined,
       };
     }
   }
@@ -147,6 +149,7 @@ export const getCurrentBookingSession = async (
   client: SupabaseClient,
   userId?: string,
   holdId?: string,
+  userEmail?: string,
 ): Promise<
   HandlerResult<BookingSessionResponse, BookingServiceError, unknown>
 > => {
@@ -185,7 +188,7 @@ export const getCurrentBookingSession = async (
       );
     }
 
-    return buildBookingSessionResponse(client, parsed.data, userId);
+    return buildBookingSessionResponse(client, parsed.data, userId, userEmail);
   }
 
   // holdId가 없으면 userId 또는 비회원으로 조회
@@ -231,7 +234,7 @@ export const getCurrentBookingSession = async (
     );
   }
 
-  return buildBookingSessionResponse(client, parsed.data, userId);
+  return buildBookingSessionResponse(client, parsed.data, userId, userEmail);
 };
 
 export const previewBooking = async (
