@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { BookingTimerBadge } from './booking-timer-badge';
 import type { BookingSessionResponse } from '../lib/dto';
@@ -45,16 +44,13 @@ export const BookingSummaryPanel = ({
           <h4 className="mb-2 text-sm font-medium text-muted-foreground">
             선택한 좌석
           </h4>
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-2">
-              {session.seats.map((seat) => (
-                <Badge key={seat.id} variant="secondary" className="px-3 py-1.5">
-                  {seat.seatLabel}
-                </Badge>
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          <div className="flex gap-2 overflow-x-auto">
+            {session.seats.map((seat) => (
+              <Badge key={seat.id} variant="secondary" className="px-3 py-1.5 shrink-0">
+                {seat.seatLabel}
+              </Badge>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-2">
