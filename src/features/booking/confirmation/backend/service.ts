@@ -134,8 +134,10 @@ export const getBookingConfirmationByOrderId = async (
       seat_id,
       price,
       is_active,
-      concert_seats!inner(seat_label),
-      concert_seat_categories!inner(name)
+      concert_seats!inner(
+        seat_label,
+        concert_seat_categories!inner(name)
+      )
     `,
     )
     .eq('order_id', orderId)
@@ -163,7 +165,7 @@ export const getBookingConfirmationByOrderId = async (
     const seatLabel =
       seatRow.concert_seats?.seat_label ?? 'Unknown Seat';
     const categoryName =
-      seatRow.concert_seat_categories?.name ?? 'Unknown Category';
+      seatRow.concert_seats?.concert_seat_categories?.name ?? 'Unknown Category';
 
     return {
       seatId: seatRow.seat_id,
