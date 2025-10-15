@@ -15,9 +15,13 @@ import {
   reservationLookupErrorCodes,
   type ReservationLookupServiceError,
 } from '@/features/reservations/lookup/backend/error';
+import { rateLimit, rateLimitPresets } from '@/backend/middleware/rate-limit';
 
 export const registerReservationLookupRoutes = (app: Hono<AppEnv>) => {
-  app.post('/api/reservations/lookup', async (c) => {
+  app.post(
+    '/api/reservations/lookup',
+    rateLimit(rateLimitPresets.reservationLookup),
+    async (c) => {
     const body = await c.req.json();
     const parsedBody = ReservationLookupRequestSchema.safeParse(body);
 
@@ -54,5 +58,6 @@ export const registerReservationLookupRoutes = (app: Hono<AppEnv>) => {
     }
 
     return respond(c, result);
-  });
+    },
+  );
 };

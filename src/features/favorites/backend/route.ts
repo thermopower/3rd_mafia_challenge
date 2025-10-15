@@ -15,6 +15,7 @@ import {
   favoriteErrorCodes,
   type FavoriteServiceError,
 } from "./error";
+import { rateLimit, rateLimitPresets } from "@/backend/middleware/rate-limit";
 
 const getUserIdFromHeader = (authHeader: string | undefined): string | null => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -24,7 +25,10 @@ const getUserIdFromHeader = (authHeader: string | undefined): string | null => {
 };
 
 export const registerFavoriteRoutes = (app: Hono<AppEnv>) => {
-  app.post("/api/favorites/toggle", async (c) => {
+  app.post(
+    "/api/favorites/toggle",
+    rateLimit(rateLimitPresets.favoriteToggle),
+    async (c) => {
     const authHeader = c.req.header("Authorization");
     const userId = getUserIdFromHeader(authHeader);
 
@@ -70,5 +74,6 @@ export const registerFavoriteRoutes = (app: Hono<AppEnv>) => {
     }
 
     return respond(c, result);
-  });
+    },
+  );
 };
