@@ -1,20 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { Search, TrendingUp } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface HeroSearchSectionProps {
   onSearch: (keyword: string) => void;
   initialValue?: string;
 }
-
-const POPULAR_KEYWORDS = [
-  '아이유',
-  '방탄소년단',
-  'DAY6',
-  '뉴진스',
-  '세븐틴',
-];
 
 export const HeroSearchSection = ({
   onSearch,
@@ -28,11 +20,6 @@ export const HeroSearchSection = ({
     if (trimmed) {
       onSearch(trimmed);
     }
-  };
-
-  const handlePopularKeywordClick = (keyword: string) => {
-    setSearchKeyword(keyword);
-    onSearch(keyword);
   };
 
   return (
@@ -56,7 +43,7 @@ export const HeroSearchSection = ({
               type="text"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="예: 아이유, 콘서트, 뮤지컬..."
+              placeholder="공연명 또는 아티스트명을 입력하세요"
               className="w-full pl-12 pr-4 py-4 rounded-lg border-2 border-white/20 bg-white/95 backdrop-blur-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all"
               maxLength={50}
             />
@@ -68,26 +55,6 @@ export const HeroSearchSection = ({
             검색
           </button>
         </form>
-
-        {/* Popular Keywords */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 text-white/90 text-sm">
-            <TrendingUp className="w-4 h-4" />
-            <span>인기 검색어</span>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {POPULAR_KEYWORDS.map((keyword) => (
-              <button
-                key={keyword}
-                type="button"
-                onClick={() => handlePopularKeywordClick(keyword)}
-                className="px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium hover:bg-white/30 transition-all border border-white/30 hover:border-white/50"
-              >
-                {keyword}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

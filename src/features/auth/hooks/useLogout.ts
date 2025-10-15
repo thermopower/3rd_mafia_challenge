@@ -20,10 +20,8 @@ export const useLogout = () => {
     onSuccess: () => {
       // 현재 사용자 정보 무효화
       queryClient.invalidateQueries({ queryKey: ['current-user'] });
-      // 홈페이지로 리다이렉트
-      router.push('/');
-      // 페이지 새로고침하여 서버 세션 초기화
-      router.refresh();
+      // 홈페이지로 완전 리로드 (로그인 상태 UI 즉시 반영)
+      window.location.href = '/';
     },
   });
 };
