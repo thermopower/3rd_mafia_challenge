@@ -22,7 +22,17 @@
       "Bash(dir \"C:\\Users\\js\\Desktop\\supernext\\docs\\usecases\")",
       "Bash(dir:*)",
       "Bash(git log:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npx typescript:*)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next lint:*)",
+      "Bash(git restore:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []
