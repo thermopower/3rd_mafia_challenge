@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { HeroSearchSection } from './hero-search-section';
 import { ConcertGrid } from './concert-grid';
 import { HomeSkeleton } from './home-skeleton';
@@ -9,11 +8,12 @@ import { useConcertList } from '../hooks/useConcertList';
 import { useRecommendedConcerts } from '../hooks/useRecommendedConcerts';
 import { useFavoriteToggle } from '@/features/favorites/hooks/useFavoriteToggle';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
+import { useAuthModal } from '@/features/auth-modal/hooks/useAuthModal';
 import type { ConcertSort } from '../lib/dto';
 
 export const HomePageView = () => {
-  const router = useRouter();
   const { isAuthenticated } = useCurrentUser();
+  const { openModal } = useAuthModal();
 
   // 검색 및 필터 상태
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -51,7 +51,7 @@ export const HomePageView = () => {
     },
     onUnauthorized: () => {
       alert('로그인이 필요한 기능입니다');
-      router.push('/login');
+      openModal('login');
     },
   });
 
@@ -72,13 +72,13 @@ export const HomePageView = () => {
     (concertId: string, isFavorite: boolean) => {
       if (!isAuthenticated) {
         alert('로그인이 필요한 기능입니다');
-        router.push('/login');
+        openModal('login');
         return;
       }
 
       favoriteToggle.mutate({ concertId });
     },
-    [isAuthenticated, router, favoriteToggle]
+    [isAuthenticated, openModal, favoriteToggle]
   );
 
   // 초기 로딩 상태

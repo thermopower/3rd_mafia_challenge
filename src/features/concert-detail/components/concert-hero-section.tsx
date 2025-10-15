@@ -7,6 +7,7 @@ import type { ConcertDetailResponse } from "@/features/concert-detail/lib/dto";
 import { AvailabilityBadge } from "./availability-badge";
 import { useFavoriteToggle } from "@/features/common/hooks/useFavoriteToggle";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
 import { cn } from "@/lib/utils";
 
 interface ConcertHeroSectionProps {
@@ -15,12 +16,12 @@ interface ConcertHeroSectionProps {
 
 export const ConcertHeroSection = ({ concert }: ConcertHeroSectionProps) => {
   const { user } = useCurrentUser();
+  const { openModal } = useAuthModal();
   const favoriteToggle = useFavoriteToggle();
 
   const handleFavoriteClick = () => {
     if (!user) {
-      // TODO: 로그인 모달 열기
-      alert("로그인이 필요한 서비스입니다.");
+      openModal("login");
       return;
     }
 
