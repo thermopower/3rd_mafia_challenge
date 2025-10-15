@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,7 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { extractApiErrorMessage } from "@/lib/remote/api-client";
 import { useLoginMutation } from "@/features/auth-modal/hooks/useLoginMutation";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -28,7 +28,6 @@ type PageLoginFormProps = {
 };
 
 export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
-  const { toast } = useToast();
   const router = useRouter();
   const { refresh } = useCurrentUser();
   const loginMutation = useLoginMutation();
@@ -45,10 +44,7 @@ export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
     try {
       await loginMutation.mutateAsync(data);
       await refresh();
-      toast({
-        title: "로그인 성공",
-        description: "환영합니다!",
-      });
+      toast.success("로그인 성공! 환영합니다!");
       const redirectTo = redirectedFrom ?? "/";
       router.push(redirectTo);
     } catch (error) {
@@ -56,11 +52,7 @@ export const PageLoginForm = ({ redirectedFrom }: PageLoginFormProps) => {
         error,
         "로그인에 실패했습니다."
       );
-      toast({
-        variant: "destructive",
-        title: "로그인 실패",
-        description: errorMessage,
-      });
+      toast.error(errorMessage);
     }
   };
 

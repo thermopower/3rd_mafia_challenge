@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,7 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { extractApiErrorMessage } from "@/lib/remote/api-client";
 import { useSignupMutation } from "@/features/auth-modal/hooks/useSignupMutation";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -28,7 +28,6 @@ type PageSignupFormProps = {
 };
 
 export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
-  const { toast } = useToast();
   const router = useRouter();
   const { refresh } = useCurrentUser();
   const signupMutation = useSignupMutation();
@@ -47,10 +46,7 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
     try {
       await signupMutation.mutateAsync(data);
       await refresh();
-      toast({
-        title: "회원가입 성공",
-        description: "회원가입이 완료되었습니다. 환영합니다!",
-      });
+      toast.success("회원가입이 완료되었습니다. 환영합니다!");
       const redirectTo = redirectedFrom ?? "/";
       router.push(redirectTo);
     } catch (error) {
@@ -58,11 +54,7 @@ export const PageSignupForm = ({ redirectedFrom }: PageSignupFormProps) => {
         error,
         "회원가입에 실패했습니다."
       );
-      toast({
-        variant: "destructive",
-        title: "회원가입 실패",
-        description: errorMessage,
-      });
+      toast.error(errorMessage);
     }
   };
 
