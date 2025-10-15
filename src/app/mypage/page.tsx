@@ -13,7 +13,7 @@ export default function MyPage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      openModal();
+      openModal("login", "/mypage");
       router.push("/");
     }
   }, [isAuthenticated, isLoading, router, openModal]);

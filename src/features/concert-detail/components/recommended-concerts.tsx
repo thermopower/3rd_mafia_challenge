@@ -10,9 +10,7 @@ interface RecommendedConcertsProps {
 export const RecommendedConcerts = ({
   currentConcertId,
 }: RecommendedConcertsProps) => {
-  const { data, isLoading, isError } = useRecommendedConcerts({
-    limit: 4,
-  });
+  const { data, isLoading, isError } = useRecommendedConcerts();
 
   if (isLoading) {
     return (

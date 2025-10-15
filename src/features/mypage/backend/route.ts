@@ -34,7 +34,11 @@ export const registerMypageRoutes = (app: Hono<AppEnv>) => {
     const result = await fetchMyReservations(supabase, userId);
 
     if (!result.ok) {
-      logger.error("Failed to fetch reservations", result.error.message);
+      const errorResult = result as {
+        ok: false;
+        error: { code: string; message: string };
+      };
+      logger.error("Failed to fetch reservations", errorResult.error.message);
     }
 
     return respond(c, result);
@@ -57,7 +61,11 @@ export const registerMypageRoutes = (app: Hono<AppEnv>) => {
     const result = await fetchMyFavorites(supabase, userId);
 
     if (!result.ok) {
-      logger.error("Failed to fetch favorites", result.error.message);
+      const errorResult = result as {
+        ok: false;
+        error: { code: string; message: string };
+      };
+      logger.error("Failed to fetch favorites", errorResult.error.message);
     }
 
     return respond(c, result);
