@@ -100,25 +100,75 @@ END;
 $$;
 
 -- updated_at triggers
-CREATE TRIGGER IF NOT EXISTS set_timestamp_profiles
-BEFORE UPDATE ON public.profiles
-FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_profiles'
+  ) THEN
+    EXECUTE '
+      CREATE TRIGGER set_timestamp_profiles
+      BEFORE UPDATE ON public.profiles
+      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()
+    ';
+  END IF;
+END;
+$$;
 
-CREATE TRIGGER IF NOT EXISTS set_timestamp_concerts
-BEFORE UPDATE ON public.concerts
-FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_concerts'
+  ) THEN
+    EXECUTE '
+      CREATE TRIGGER set_timestamp_concerts
+      BEFORE UPDATE ON public.concerts
+      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()
+    ';
+  END IF;
+END;
+$$;
 
-CREATE TRIGGER IF NOT EXISTS set_timestamp_concert_seat_categories
-BEFORE UPDATE ON public.concert_seat_categories
-FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_concert_seat_categories'
+  ) THEN
+    EXECUTE '
+      CREATE TRIGGER set_timestamp_concert_seat_categories
+      BEFORE UPDATE ON public.concert_seat_categories
+      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()
+    ';
+  END IF;
+END;
+$$;
 
-CREATE TRIGGER IF NOT EXISTS set_timestamp_concert_seats
-BEFORE UPDATE ON public.concert_seats
-FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_concert_seats'
+  ) THEN
+    EXECUTE '
+      CREATE TRIGGER set_timestamp_concert_seats
+      BEFORE UPDATE ON public.concert_seats
+      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()
+    ';
+  END IF;
+END;
+$$;
 
-CREATE TRIGGER IF NOT EXISTS set_timestamp_reservation_orders
-BEFORE UPDATE ON public.reservation_orders
-FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_reservation_orders'
+  ) THEN
+    EXECUTE '
+      CREATE TRIGGER set_timestamp_reservation_orders
+      BEFORE UPDATE ON public.reservation_orders
+      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()
+    ';
+  END IF;
+END;
+$$;
 
 -- indexes & constraints
 CREATE UNIQUE INDEX IF NOT EXISTS favorite_concerts_user_concert_idx
