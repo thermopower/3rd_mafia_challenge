@@ -14,10 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { extractApiErrorMessage } from "@/lib/remote/api-client";
-import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
-import { useLoginMutation } from "@/features/auth-modal/hooks/useLoginMutation";
-import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { useAuth } from "@/features/common/contexts/auth-context";
 import {
   LoginRequestSchema,
   type LoginRequest,
@@ -25,9 +22,7 @@ import {
 
 export const LoginForm = () => {
   const { toast } = useToast();
-  const { closeModal } = useAuthModal();
-  const { refresh } = useCurrentUser();
-  const loginMutation = useLoginMutation();
+  const { state, login, closeAuthModal } = useAuth();
 
   const form = useForm<LoginRequest>({
     resolver: zodResolver(LoginRequestSchema),
@@ -38,25 +33,20 @@ export const LoginForm = () => {
   });
 
   const onSubmit = async (data: LoginRequest) => {
-    try {
-      await loginMutation.mutateAsync(data);
-      // 현재 사용자 정보 갱신
-      await refresh();
-      toast({
-        title: "로그인 성공",
-        description: "환영합니다!",
-      });
-      closeModal();
-    } catch (error) {
-      const errorMessage = extractApiErrorMessage(
-        error,
-        "로그인에 실패했습니다."
-      );
+    await login(data.email, data.password);
+
+    if (state.error) {
       toast({
         variant: "destructive",
         title: "로그인 실패",
-        description: errorMessage,
+        description: state.error,
       });
+    } else if (state.isLoggedIn) {
+      toast({
+        title: "로그인 성공",
+        description: `환영합니다, ${state.currentUser?.name}님!`,
+      });
+      closeAuthModal();
     }
   };
 
@@ -74,7 +64,7 @@ export const LoginForm = () => {
                   type="email"
                   placeholder="example@email.com"
                   {...field}
-                  disabled={loginMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -93,7 +83,7 @@ export const LoginForm = () => {
                   type="password"
                   placeholder="비밀번호를 입력하세요"
                   {...field}
-                  disabled={loginMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -104,9 +94,9 @@ export const LoginForm = () => {
         <Button
           type="submit"
           className="w-full"
-          disabled={loginMutation.isPending}
+          disabled={state.isLoading}
         >
-          {loginMutation.isPending && (
+          {state.isLoading && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
           로그인

@@ -14,10 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { extractApiErrorMessage } from "@/lib/remote/api-client";
-import { useAuthModal } from "@/features/auth-modal/hooks/useAuthModal";
-import { useSignupMutation } from "@/features/auth-modal/hooks/useSignupMutation";
-import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { useAuth } from "@/features/common/contexts/auth-context";
 import {
   SignupRequestSchema,
   type SignupRequest,
@@ -25,9 +22,7 @@ import {
 
 export const SignupForm = () => {
   const { toast } = useToast();
-  const { closeModal } = useAuthModal();
-  const { refresh } = useCurrentUser();
-  const signupMutation = useSignupMutation();
+  const { state, signup, closeAuthModal } = useAuth();
 
   const form = useForm<SignupRequest>({
     resolver: zodResolver(SignupRequestSchema),
@@ -40,25 +35,20 @@ export const SignupForm = () => {
   });
 
   const onSubmit = async (data: SignupRequest) => {
-    try {
-      await signupMutation.mutateAsync(data);
-      // 현재 사용자 정보 갱신
-      await refresh();
-      toast({
-        title: "회원가입 성공",
-        description: "회원가입이 완료되었습니다. 환영합니다!",
-      });
-      closeModal();
-    } catch (error) {
-      const errorMessage = extractApiErrorMessage(
-        error,
-        "회원가입에 실패했습니다."
-      );
+    await signup(data.email, data.password, data.fullName);
+
+    if (state.error) {
       toast({
         variant: "destructive",
         title: "회원가입 실패",
-        description: errorMessage,
+        description: state.error,
       });
+    } else if (state.isLoggedIn) {
+      toast({
+        title: "회원가입 성공",
+        description: `환영합니다, ${state.currentUser?.name}님!`,
+      });
+      closeAuthModal();
     }
   };
 
@@ -76,7 +66,7 @@ export const SignupForm = () => {
                   type="email"
                   placeholder="example@email.com"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -95,7 +85,7 @@ export const SignupForm = () => {
                   type="password"
                   placeholder="8자 이상, 숫자와 특수문자 포함"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -114,7 +104,7 @@ export const SignupForm = () => {
                   type="text"
                   placeholder="홍길동"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -133,7 +123,7 @@ export const SignupForm = () => {
                   type="tel"
                   placeholder="010-1234-5678"
                   {...field}
-                  disabled={signupMutation.isPending}
+                  disabled={state.isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -144,9 +134,9 @@ export const SignupForm = () => {
         <Button
           type="submit"
           className="w-full"
-          disabled={signupMutation.isPending}
+          disabled={state.isLoading}
         >
-          {signupMutation.isPending && (
+          {state.isLoading && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
           회원가입

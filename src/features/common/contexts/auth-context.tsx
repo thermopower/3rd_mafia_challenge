@@ -10,29 +10,45 @@ import {
 } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 
+type AuthModalMode = "login" | "signup";
+
 type AuthState = {
   isLoading: boolean;
   isLoggedIn: boolean;
-  currentUser: { id: string; name: string } | null;
+  currentUser: { id: string; name: string; email?: string } | null;
   error: string | null;
-  showLoginModal: boolean;
+  showAuthModal: boolean;
+  authModalMode: AuthModalMode;
+  pendingRedirect: string | null;
 };
 
 type AuthAction =
   | { type: "LOGIN_START" }
-  | { type: "LOGIN_SUCCESS"; payload: { id: string; name: string } }
+  | {
+      type: "LOGIN_SUCCESS";
+      payload: { id: string; name: string; email?: string };
+    }
   | { type: "LOGIN_FAILURE"; payload: string }
+  | { type: "SIGNUP_START" }
+  | {
+      type: "SIGNUP_SUCCESS";
+      payload: { id: string; name: string; email?: string };
+    }
+  | { type: "SIGNUP_FAILURE"; payload: string }
   | { type: "LOGOUT" }
-  | { type: "OPEN_LOGIN_MODAL" }
-  | { type: "CLOSE_LOGIN_MODAL" }
+  | { type: "OPEN_AUTH_MODAL"; payload: { mode: AuthModalMode; redirect?: string } }
+  | { type: "CLOSE_AUTH_MODAL" }
+  | { type: "SWITCH_AUTH_MODE"; payload: AuthModalMode }
   | { type: "CLEAR_ERROR" };
 
 type AuthContextValue = {
   state: AuthState;
   login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => Promise<void>;
-  openLoginModal: () => void;
-  closeLoginModal: () => void;
+  openAuthModal: (mode: AuthModalMode, redirect?: string) => void;
+  closeAuthModal: () => void;
+  switchAuthMode: (mode: AuthModalMode) => void;
   clearError: () => void;
 };
 
@@ -41,32 +57,36 @@ const initialState: AuthState = {
   isLoggedIn: false,
   currentUser: null,
   error: null,
-  showLoginModal: false,
+  showAuthModal: false,
+  authModalMode: "login",
+  pendingRedirect: null,
 };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case "LOGIN_START":
+    case "SIGNUP_START":
       return {
         ...state,
         isLoading: true,
         error: null,
       };
     case "LOGIN_SUCCESS":
+    case "SIGNUP_SUCCESS":
       return {
         ...state,
         isLoading: false,
         isLoggedIn: true,
         currentUser: action.payload,
         error: null,
-        showLoginModal: false,
+        showAuthModal: false,
+        pendingRedirect: null,
       };
     case "LOGIN_FAILURE":
+    case "SIGNUP_FAILURE":
       return {
         ...state,
         isLoading: false,
-        isLoggedIn: false,
-        currentUser: null,
         error: action.payload,
       };
     case "LOGOUT":
@@ -76,16 +96,25 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         currentUser: null,
         error: null,
       };
-    case "OPEN_LOGIN_MODAL":
+    case "OPEN_AUTH_MODAL":
       return {
         ...state,
-        showLoginModal: true,
+        showAuthModal: true,
+        authModalMode: action.payload.mode,
+        pendingRedirect: action.payload.redirect || null,
         error: null,
       };
-    case "CLOSE_LOGIN_MODAL":
+    case "CLOSE_AUTH_MODAL":
       return {
         ...state,
-        showLoginModal: false,
+        showAuthModal: false,
+        pendingRedirect: null,
+        error: null,
+      };
+    case "SWITCH_AUTH_MODE":
+      return {
+        ...state,
+        authModalMode: action.payload,
         error: null,
       };
     case "CLEAR_ERROR":
@@ -140,6 +169,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         payload: {
           id: data.user.id,
           name: userName,
+          email: data.user.email,
         },
       });
     } catch (err) {
@@ -148,6 +178,57 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       dispatch({ type: "LOGIN_FAILURE", payload: errorMessage });
     }
   }, []);
+
+  const signup = useCallback(
+    async (email: string, password: string, fullName?: string) => {
+      dispatch({ type: "SIGNUP_START" });
+
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName || email.split("@")[0],
+            },
+          },
+        });
+
+        if (error) {
+          dispatch({ type: "SIGNUP_FAILURE", payload: error.message });
+          return;
+        }
+
+        if (!data.user) {
+          dispatch({
+            type: "SIGNUP_FAILURE",
+            payload: "회원가입에 실패했습니다.",
+          });
+          return;
+        }
+
+        const userName =
+          (data.user.user_metadata?.full_name as string) || fullName || "사용자";
+
+        dispatch({
+          type: "SIGNUP_SUCCESS",
+          payload: {
+            id: data.user.id,
+            name: userName,
+            email: data.user.email,
+          },
+        });
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "알 수 없는 오류가 발생했습니다.";
+        dispatch({ type: "SIGNUP_FAILURE", payload: errorMessage });
+      }
+    },
+    []
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -159,12 +240,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, []);
 
-  const openLoginModal = useCallback(() => {
-    dispatch({ type: "OPEN_LOGIN_MODAL" });
+  const openAuthModal = useCallback((mode: AuthModalMode, redirect?: string) => {
+    dispatch({ type: "OPEN_AUTH_MODAL", payload: { mode, redirect } });
   }, []);
 
-  const closeLoginModal = useCallback(() => {
-    dispatch({ type: "CLOSE_LOGIN_MODAL" });
+  const closeAuthModal = useCallback(() => {
+    dispatch({ type: "CLOSE_AUTH_MODAL" });
+  }, []);
+
+  const switchAuthMode = useCallback((mode: AuthModalMode) => {
+    dispatch({ type: "SWITCH_AUTH_MODE", payload: mode });
   }, []);
 
   const clearError = useCallback(() => {
@@ -175,12 +260,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     () => ({
       state,
       login,
+      signup,
       logout,
-      openLoginModal,
-      closeLoginModal,
+      openAuthModal,
+      closeAuthModal,
+      switchAuthMode,
       clearError,
     }),
-    [state, login, logout, openLoginModal, closeLoginModal, clearError]
+    [state, login, signup, logout, openAuthModal, closeAuthModal, switchAuthMode, clearError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -3,6 +3,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { loadCurrentUser } from "@/features/auth/server/load-current-user";
 import { CurrentUserProvider } from "@/features/auth/context/current-user-context";
+import { AuthProvider } from "@/features/common/contexts/auth-context";
 import { ConcertProvider } from "@/features/common/contexts/concert-context";
 import { BookingProvider } from "@/features/common/contexts/booking-context";
 import { UserProvider } from "@/features/common/contexts/user-context";
@@ -24,11 +25,13 @@ export default async function RootLayout({
       <body className="antialiased font-sans">
         <Providers>
           <CurrentUserProvider initialState={currentUser}>
-            <ConcertProvider>
-              <BookingProvider>
-                <UserProvider>{children}</UserProvider>
-              </BookingProvider>
-            </ConcertProvider>
+            <AuthProvider>
+              <ConcertProvider>
+                <BookingProvider>
+                  <UserProvider>{children}</UserProvider>
+                </BookingProvider>
+              </ConcertProvider>
+            </AuthProvider>
           </CurrentUserProvider>
         </Providers>
       </body>
