@@ -15,7 +15,7 @@
 - 예매 확정 시점의 Supabase 데이터와 동기화된 결과 표시
 
 ### 1.3 경로 및 범위
-- **페이지 경로**: `/bookingconfirm`
+- **페이지 경로**: `/booking-confirmation`
 - **필수 파라미터**: `orderId` (쿼리/상태 기반 전달)
 - **주요 API 엔드포인트**:
   - `GET /api/reservations/:orderId` : 예매 상세 조회
@@ -30,7 +30,7 @@
 
 | 모듈 | 위치 | 설명 |
 |------|------|------|
-| **BookingConfirmationPage** | `src/app/bookingconfirm/page.tsx` | 페이지 엔트리, Suspense/에러 경계 |
+| **BookingConfirmationPage** | `src/app/booking-confirmation/page.tsx` | 페이지 엔트리, Suspense/에러 경계 |
 | **BookingConfirmationView** | `src/features/booking/confirmation/components/booking-confirmation-view.tsx` | 메인 UI 컨테이너 |
 | **ConfirmationHeader** | `src/features/booking/confirmation/components/confirmation-header.tsx` | 성공 아이콘, 제목, 설명 |
 | **OrderSummaryCard** | `src/features/booking/confirmation/components/order-summary-card.tsx` | 예매 번호, 복사 버튼 |
@@ -48,7 +48,7 @@
 ```mermaid
 graph TB
     subgraph "App Router"
-        Page[`src/app/bookingconfirm/page.tsx`]
+        Page[`src/app/booking-confirmation/page.tsx`]
     end
 
     subgraph "Presentation"
@@ -173,7 +173,7 @@ graph TB
   - 데이터 마스킹 로직 검증.
   - Supabase 조인 컬럼 누락 시 에러 핸들링.
 - **통합 테스트**
-  - `/booking` → `/bookingconfirm` E2E 시나리오.
+  - `/booking` → `/booking-confirmation` E2E 시나리오.
   - 예매 완료 후 다시 새로고침해도 동일 데이터 확인.
 
 ---

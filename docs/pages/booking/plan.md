@@ -160,7 +160,7 @@ graph TB
    - `useMutation`으로 사전 검증 호출, 입력 데이터 Zod 스키마 직렬화.
    - 성공 시 검증 결과 캐시 저장하여 재사용.
 4. `useBookingConfirm`
-   - 예매 확정 성공 시 `/bookingconfirm?orderId=`로 라우팅.
+   - 예매 확정 성공 시 `/booking-confirmation?orderId=`로 라우팅.
    - React Query 캐시 무효화(`reservations`, `mypage`) 처리.
 
 ### 3.3 Backend
@@ -189,7 +189,7 @@ graph TB
   - 좌석 만료 로직, 선점 중복 검증, 입력 Validation.
   - 비회원 생성/기존 회원 병행 시나리오.
 - **통합 테스트**
-  - `/booking` → `/bookingconfirm` 플로우 E2E 체크 (Playwright).
+  - `/booking` → `/booking-confirmation` 플로우 E2E 체크 (Playwright).
   - React Query 캐시 상태 점검 (`state-management.md` 가이드 준수).
 
 ---
@@ -200,7 +200,7 @@ graph TB
 - [ ] HTTP 호출은 `@/lib/remote/api-client` 단일 경로 사용
 - [ ] `picsum.photos` placeholder URL seed 고정
 - [ ] 만료 타이머와 모달 접근성(`aria-live`, focus trap) 확인
-- [ ] 성공 시 `/bookingconfirm`로 Navigation & Toast 동작 확인
+- [ ] 성공 시 `/booking-confirmation`로 Navigation & Toast 동작 확인
 
 ---
 
