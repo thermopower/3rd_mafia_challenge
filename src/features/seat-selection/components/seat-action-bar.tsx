@@ -76,7 +76,7 @@ export const SeatActionBar = ({ concertId, scheduleId }: SeatActionBarProps) => 
       });
 
       // 예매 정보 입력 페이지로 이동
-      router.push(`/booking/${result.holdId}`);
+      router.push('/booking');
     } catch (err) {
       const message = extractApiErrorMessage(err, '좌석 선점에 실패했습니다.');
       setError(message);
