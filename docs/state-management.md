@@ -77,15 +77,12 @@ graph TD
       isLoggedIn: boolean;      // 로그인 여부
       currentUser: { id: string; name: string; } | null; // 현재 유저 정보
       error: string | null;     // 에러 메시지
-      showLoginModal: boolean;  // 로그인 모달 표시 여부
     };
     ```
 *   **노출 변수 및 함수 (`AuthContextValue`)**:
     *   `state: AuthState`: 위의 상태 객체 전체
     *   `login(email, password)`: 로그인 시도를 위한 함수 (내부적으로 `LOGIN_START`, `LOGIN_SUCCESS`/`FAILURE` 액션 dispatch)
     *   `logout()`: 로그아웃 함수 (내부적으로 `LOGOUT` 액션 dispatch)
-    *   `openLoginModal()`: 로그인 모달을 여는 함수
-    *   `closeLoginModal()`: 로그인 모달을 닫는 함수
 
 ## **나. ConcertContext**
 
@@ -161,7 +158,7 @@ graph TD
 
 | Context Provider | 노출 변수 (상태) | 노출 함수 (상태 변경) |
 | :--- | :--- | :--- |
-| **AuthProvider** | `isLoading`, `isLoggedIn`, `currentUser`, `error`, `showLoginModal` | `login()`, `logout()`, `openLoginModal()`, `closeLoginModal()` |
+| **AuthProvider** | `isLoading`, `isLoggedIn`, `currentUser`, `error` | `login()`, `logout()` |
 | **ConcertProvider** | `status`, `allConcerts`, `filteredConcerts`, `searchTerm`, `activeFilters` | `fetchConcerts()`, `setSearchTerm()`, `setFilter()`, `clearFilters()` |
 | **BookingProvider** | `status`, `concertInfo`, `allSeats`, `selectedSeats`, `bookingResult` | `startBooking()`, `selectSeat()`, `deselectSeat()`, `confirmBooking()`, `resetBooking()` |
 | **UserProvider** | `status`, `myBookings`, `wishlist`, `notifications`, `hasNewNotification` | `fetchUserData()`, `toggleWishlist()`, `readNotification()` |

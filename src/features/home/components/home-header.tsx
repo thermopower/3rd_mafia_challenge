@@ -1,19 +1,20 @@
 "use client";
 
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { LogIn, Search, User, LogOut } from 'lucide-react';
-import { useAuthModal } from '@/features/auth-modal/hooks/useAuthModal';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { Button } from '@/components/ui/button';
 
 export const HomeHeader = () => {
   const { isAuthenticated, user } = useCurrentUser();
-  const { openModal } = useAuthModal();
   const { mutate: logout } = useLogout();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleLoginClick = () => {
-    openModal('login');
+    router.push(`/login?redirectedFrom=${encodeURIComponent(pathname)}`);
   };
 
   const handleLogoutClick = () => {

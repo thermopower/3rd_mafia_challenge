@@ -6,7 +6,6 @@ import { CurrentUserProvider } from "@/features/auth/context/current-user-contex
 import { ConcertProvider } from "@/features/common/contexts/concert-context";
 import { BookingProvider } from "@/features/common/contexts/booking-context";
 import { UserProvider } from "@/features/common/contexts/user-context";
-import { AuthModalProvider } from "@/features/auth-modal/components/auth-modal-provider";
 
 export const metadata: Metadata = {
   title: "TicketGem - 콘서트 예매 플랫폼",
@@ -27,9 +26,7 @@ export default async function RootLayout({
           <CurrentUserProvider initialState={currentUser}>
             <ConcertProvider>
               <BookingProvider>
-                <UserProvider>
-                  <AuthModalProvider>{children}</AuthModalProvider>
-                </UserProvider>
+                <UserProvider>{children}</UserProvider>
               </BookingProvider>
             </ConcertProvider>
           </CurrentUserProvider>
