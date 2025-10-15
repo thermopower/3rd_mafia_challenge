@@ -183,7 +183,7 @@ export const getBookingConfirmationByOrderId = async (
     confirmedAt: order.confirmed_at,
     bookerName: order.booker_name ?? 'Unknown',
     bookerContact: order.booker_contact ?? '',
-    totalPrice: parseFloat(order.total_price ?? '0'),
+    totalPrice: order.total_price ?? 0,
     concert: {
       id: concert.id,
       title: concert.title,

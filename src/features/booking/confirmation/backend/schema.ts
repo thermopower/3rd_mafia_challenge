@@ -57,7 +57,7 @@ export const ReservationOrderRowSchema = z.object({
   confirmed_at: z.string().nullable(),
   booker_name: z.string().nullable(),
   booker_contact: z.string().nullable(),
-  total_price: z.string().nullable(),
+  total_price: z.coerce.number().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
