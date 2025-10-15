@@ -9,11 +9,11 @@ export const useConcertDetail = (concertId: string) => {
   return useSuspenseQuery({
     queryKey: ["concert-detail", concertId],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: ConcertDetailResponse }>(
+      const response = await apiClient.get<ConcertDetailResponse>(
         `/api/concerts/${concertId}`
       );
 
-      const parsed = ConcertDetailResponseSchema.safeParse(response.data.data);
+      const parsed = ConcertDetailResponseSchema.safeParse(response.data);
 
       if (!parsed.success) {
         throw new Error("Invalid concert detail response schema");

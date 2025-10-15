@@ -21,7 +21,7 @@ export const useMyReservations = () => {
         throw new Error("로그인이 필요합니다.");
       }
 
-      const response = await apiClient.get<{ data: MyReservationsResponse }>(
+      const response = await apiClient.get<MyReservationsResponse>(
         "/api/mypage/reservations",
         {
           headers: {
@@ -30,9 +30,7 @@ export const useMyReservations = () => {
         }
       );
 
-      const parsed = MyReservationsResponseSchema.safeParse(
-        response.data.data
-      );
+      const parsed = MyReservationsResponseSchema.safeParse(response.data);
 
       if (!parsed.success) {
         throw new Error("Invalid reservations response schema");

@@ -21,7 +21,7 @@ export const useMyFavorites = () => {
         throw new Error("로그인이 필요합니다.");
       }
 
-      const response = await apiClient.get<{ data: MyFavoritesResponse }>(
+      const response = await apiClient.get<MyFavoritesResponse>(
         "/api/mypage/favorites",
         {
           headers: {
@@ -30,7 +30,7 @@ export const useMyFavorites = () => {
         }
       );
 
-      const parsed = MyFavoritesResponseSchema.safeParse(response.data.data);
+      const parsed = MyFavoritesResponseSchema.safeParse(response.data);
 
       if (!parsed.success) {
         throw new Error("Invalid favorites response schema");

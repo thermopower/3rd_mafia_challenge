@@ -8,10 +8,11 @@ import type {
 export const useReservationLookup = () => {
   return useMutation({
     mutationFn: async (payload: ReservationLookupRequest) => {
-      const response = await apiClient.post<{
-        data: ReservationLookupResponse;
-      }>('/api/reservations/lookup', payload);
-      return response.data.data;
+      const response = await apiClient.post<ReservationLookupResponse>(
+        '/api/reservations/lookup',
+        payload
+      );
+      return response.data;
     },
     onError: (error) => {
       const message = extractApiErrorMessage(

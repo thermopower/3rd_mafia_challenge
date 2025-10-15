@@ -15,14 +15,12 @@ export const useFavoriteToggle = () => {
 
   return useMutation({
     mutationFn: async (request: FavoriteToggleRequest) => {
-      const response = await apiClient.post<{ data: FavoriteToggleResponse }>(
+      const response = await apiClient.post<FavoriteToggleResponse>(
         "/api/favorites/toggle",
         request
       );
 
-      const parsed = FavoriteToggleResponseSchema.safeParse(
-        response.data.data
-      );
+      const parsed = FavoriteToggleResponseSchema.safeParse(response.data);
 
       if (!parsed.success) {
         throw new Error("Invalid favorite toggle response schema");

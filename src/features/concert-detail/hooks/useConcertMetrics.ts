@@ -9,13 +9,11 @@ export const useConcertMetrics = (concertId: string) => {
   return useQuery({
     queryKey: ["concert-metrics", concertId],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: ConcertMetricsResponse }>(
+      const response = await apiClient.get<ConcertMetricsResponse>(
         `/api/concerts/${concertId}/metrics`
       );
 
-      const parsed = ConcertMetricsResponseSchema.safeParse(
-        response.data.data
-      );
+      const parsed = ConcertMetricsResponseSchema.safeParse(response.data);
 
       if (!parsed.success) {
         throw new Error("Invalid concert metrics response schema");
