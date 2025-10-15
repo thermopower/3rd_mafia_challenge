@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { differenceInSeconds, parseISO } from 'date-fns';
 
 interface UseSeatCountdownOptions {
@@ -13,6 +13,12 @@ export const useSeatCountdown = ({
   onExpire,
 }: UseSeatCountdownOptions) => {
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const onExpireRef = useRef(onExpire);
+
+  // onExpire 콜백을 ref에 저장하여 dependency 문제 해결
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
 
   useEffect(() => {
     if (!expiresAt) {
@@ -27,7 +33,7 @@ export const useSeatCountdown = ({
 
       if (diff <= 0) {
         setRemainingSeconds(0);
-        onExpire?.();
+        onExpireRef.current?.();
         return 0;
       }
 
@@ -50,7 +56,7 @@ export const useSeatCountdown = ({
     return () => {
       clearInterval(interval);
     };
-  }, [expiresAt, onExpire]);
+  }, [expiresAt]);
 
   const formatTime = (seconds: number | null): string => {
     if (seconds === null || seconds <= 0) {
