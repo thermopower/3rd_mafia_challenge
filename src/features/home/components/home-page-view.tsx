@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
+import { HomeHeader } from './home-header';
 import { HeroSearchSection } from './hero-search-section';
 import { ConcertGrid } from './concert-grid';
 import { HomeSkeleton } from './home-skeleton';
@@ -88,6 +89,7 @@ export const HomePageView = () => {
 
   return (
     <div className="w-full min-h-screen bg-slate-50">
+      <HomeHeader />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
         {/* Hero Search Section */}
         <HeroSearchSection
