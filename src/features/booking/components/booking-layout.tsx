@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { extractApiErrorMessage } from '@/lib/remote/api-client';
@@ -23,6 +23,7 @@ export const BookingLayout = () => {
 
   const [agreed, setAgreed] = useState(false);
   const [formValues, setFormValues] = useState<PurchaserFormValues | null>(null);
+  const [isFormValid, setIsFormValid] = useState(false);
 
   const handleExpire = () => {
     toast.error('선점 시간이 만료되었습니다. 좌석 선택 페이지로 이동합니다.');
@@ -86,15 +87,17 @@ export const BookingLayout = () => {
     );
   }
 
-  const prefillData = session.prefillData
-    ? {
-        bookerName: session.prefillData.name,
-        bookerEmail: session.prefillData.email,
-        bookerPhone: session.prefillData.phone,
-      }
-    : undefined;
+  const prefillData = useMemo(() => {
+    return session.prefillData
+      ? {
+          bookerName: session.prefillData.name,
+          bookerEmail: session.prefillData.email,
+          bookerPhone: session.prefillData.phone,
+        }
+      : undefined;
+  }, [session.prefillData]);
 
-  const canConfirm = agreed && formValues && !isExpired;
+  const canConfirm = agreed && isFormValid && formValues && !isExpired;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -105,7 +108,8 @@ export const BookingLayout = () => {
           <PurchaserForm
             defaultValues={prefillData}
             isLoggedIn={session.isLoggedIn}
-            onSubmit={setFormValues}
+            onValuesChange={setFormValues}
+            onValidityChange={setIsFormValid}
           >
             {(form) => (
               <>

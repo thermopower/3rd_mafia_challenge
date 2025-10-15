@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useEffect } from 'react';
 import {
   Form,
   FormControl,
@@ -27,14 +28,16 @@ export type PurchaserFormValues = z.infer<typeof purchaserFormSchema>;
 interface PurchaserFormProps {
   defaultValues?: Partial<PurchaserFormValues>;
   isLoggedIn?: boolean;
-  onSubmit?: (values: PurchaserFormValues) => void;
+  onValuesChange?: (values: PurchaserFormValues | null) => void;
+  onValidityChange?: (isValid: boolean) => void;
   children?: (form: ReturnType<typeof useForm<PurchaserFormValues>>) => React.ReactNode;
 }
 
 export const PurchaserForm = ({
   defaultValues,
   isLoggedIn,
-  onSubmit,
+  onValuesChange,
+  onValidityChange,
   children,
 }: PurchaserFormProps) => {
   const form = useForm<PurchaserFormValues>({
@@ -44,10 +47,44 @@ export const PurchaserForm = ({
       bookerEmail: defaultValues?.bookerEmail ?? '',
       bookerPhone: defaultValues?.bookerPhone ?? '',
     },
+    mode: 'onChange', // 입력할 때마다 validation 실행
   });
 
+  // defaultValues가 변경되면 폼 리셋
+  useEffect(() => {
+    if (defaultValues) {
+      form.reset({
+        bookerName: defaultValues.bookerName ?? '',
+        bookerEmail: defaultValues.bookerEmail ?? '',
+        bookerPhone: defaultValues.bookerPhone ?? '',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultValues]);
+
+  // 폼 값이 변경될 때마다 실시간으로 추적
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      // 모든 필수 필드가 채워졌는지 확인
+      if (values.bookerName && values.bookerEmail && values.bookerPhone) {
+        onValuesChange?.(values as PurchaserFormValues);
+      } else {
+        onValuesChange?.(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
+  // validation 상태가 변경될 때마다 알림
+  useEffect(() => {
+    onValidityChange?.(form.formState.isValid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.formState.isValid]);
+
   const handleSubmit = (values: PurchaserFormValues) => {
-    onSubmit?.(values);
+    onValuesChange?.(values);
   };
 
   return (
