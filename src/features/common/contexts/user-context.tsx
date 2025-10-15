@@ -8,49 +8,65 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import type { BookingInfo, Concert, Notification } from "../types";
+import { apiClient } from "@/lib/remote/api-client";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import type {
+  ReservationItem,
+  MyReservationsResponse,
+  FavoriteConcertItem,
+  MyFavoritesResponse,
+} from "@/features/mypage/lib/dto";
+import {
+  MyReservationsResponseSchema,
+  MyFavoritesResponseSchema,
+} from "@/features/mypage/lib/dto";
+import type {
+  FavoriteToggleRequest,
+  FavoriteToggleResponse,
+} from "@/features/favorites/lib/dto";
+import { FavoriteToggleResponseSchema } from "@/features/favorites/lib/dto";
+import type { Notification } from "../types";
 
 type UserStatus = "idle" | "loading" | "success" | "error";
 
 type UserState = {
   status: UserStatus;
-  myBookings: BookingInfo[];
-  wishlist: Concert[];
+  myReservations: ReservationItem[];
+  myFavorites: FavoriteConcertItem[];
   notifications: Notification[];
   hasNewNotification: boolean;
   error: string | null;
 };
 
 type UserAction =
-  | { type: "FETCH_START" }
+  | { type: "FETCH_RESERVATIONS_START" }
+  | { type: "FETCH_RESERVATIONS_SUCCESS"; payload: ReservationItem[] }
+  | { type: "FETCH_RESERVATIONS_FAILURE"; payload: string }
+  | { type: "FETCH_FAVORITES_START" }
+  | { type: "FETCH_FAVORITES_SUCCESS"; payload: FavoriteConcertItem[] }
+  | { type: "FETCH_FAVORITES_FAILURE"; payload: string }
+  | { type: "TOGGLE_FAVORITE_START" }
   | {
-      type: "FETCH_SUCCESS";
-      payload: {
-        bookings: BookingInfo[];
-        wishlist: Concert[];
-        notifications: Notification[];
-      };
+      type: "TOGGLE_FAVORITE_SUCCESS";
+      payload: { concertId: string; isFavorite: boolean };
     }
-  | { type: "FETCH_FAILURE"; payload: string }
-  | { type: "TOGGLE_WISHLIST_START" }
-  | { type: "ADD_WISHLIST_SUCCESS"; payload: Concert }
-  | { type: "REMOVE_WISHLIST_SUCCESS"; payload: string }
-  | { type: "WISHLIST_FAILURE"; payload: string }
+  | { type: "TOGGLE_FAVORITE_FAILURE"; payload: string }
   | { type: "READ_NOTIFICATION"; payload: string }
   | { type: "CLEAR_ALL_NOTIFICATIONS" };
 
 type UserContextValue = {
   state: UserState;
-  fetchUserData: () => Promise<void>;
-  toggleWishlist: (concert: Concert) => Promise<void>;
+  fetchMyReservations: () => Promise<void>;
+  fetchMyFavorites: () => Promise<void>;
+  toggleFavorite: (concertId: string) => Promise<boolean>;
   readNotification: (notificationId: string) => void;
   clearAllNotifications: () => void;
 };
 
 const initialState: UserState = {
   status: "idle",
-  myBookings: [],
-  wishlist: [],
+  myReservations: [],
+  myFavorites: [],
   notifications: [],
   hasNewNotification: false,
   error: null,
@@ -58,57 +74,64 @@ const initialState: UserState = {
 
 function userReducer(state: UserState, action: UserAction): UserState {
   switch (action.type) {
-    case "FETCH_START":
+    case "FETCH_RESERVATIONS_START":
       return {
         ...state,
         status: "loading",
         error: null,
       };
-    case "FETCH_SUCCESS": {
-      const hasUnread = action.payload.notifications.some(
-        (notif) => !notif.isRead
-      );
+    case "FETCH_RESERVATIONS_SUCCESS":
       return {
         ...state,
         status: "success",
-        myBookings: action.payload.bookings,
-        wishlist: action.payload.wishlist,
-        notifications: action.payload.notifications,
-        hasNewNotification: hasUnread,
+        myReservations: action.payload,
         error: null,
       };
-    }
-    case "FETCH_FAILURE":
+    case "FETCH_RESERVATIONS_FAILURE":
       return {
         ...state,
         status: "error",
         error: action.payload,
       };
-    case "TOGGLE_WISHLIST_START":
+    case "FETCH_FAVORITES_START":
+      return {
+        ...state,
+        status: "loading",
+        error: null,
+      };
+    case "FETCH_FAVORITES_SUCCESS":
+      return {
+        ...state,
+        status: "success",
+        myFavorites: action.payload,
+        error: null,
+      };
+    case "FETCH_FAVORITES_FAILURE":
+      return {
+        ...state,
+        status: "error",
+        error: action.payload,
+      };
+    case "TOGGLE_FAVORITE_START":
       return {
         ...state,
         error: null,
       };
-    case "ADD_WISHLIST_SUCCESS": {
-      const exists = state.wishlist.some(
-        (concert) => concert.id === action.payload.id
-      );
-      if (exists) {
-        return state;
+    case "TOGGLE_FAVORITE_SUCCESS": {
+      const { concertId, isFavorite } = action.payload;
+      if (!isFavorite) {
+        // 찜 제거됨
+        return {
+          ...state,
+          myFavorites: state.myFavorites.filter(
+            (fav) => fav.concertId !== concertId
+          ),
+        };
       }
-      return {
-        ...state,
-        wishlist: [...state.wishlist, action.payload],
-      };
+      // 찜 추가는 fetchMyFavorites로 다시 가져오는 것이 안전
+      return state;
     }
-    case "REMOVE_WISHLIST_SUCCESS":
-      return {
-        ...state,
-        wishlist: state.wishlist.filter(
-          (concert) => concert.id !== action.payload
-        ),
-      };
-    case "WISHLIST_FAILURE":
+    case "TOGGLE_FAVORITE_FAILURE":
       return {
         ...state,
         error: action.payload,
@@ -144,92 +167,132 @@ type UserProviderProps = {
 export const UserProvider = ({ children }: UserProviderProps) => {
   const [state, dispatch] = useReducer(userReducer, initialState);
 
-  const fetchUserData = useCallback(async () => {
-    dispatch({ type: "FETCH_START" });
+  const fetchMyReservations = useCallback(async () => {
+    dispatch({ type: "FETCH_RESERVATIONS_START" });
 
     try {
-      const [bookingsRes, wishlistRes, notificationsRes] = await Promise.all([
-        fetch("/api/user/bookings"),
-        fetch("/api/user/wishlist"),
-        fetch("/api/user/notifications"),
-      ]);
+      const supabase = getSupabaseBrowserClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!bookingsRes.ok || !wishlistRes.ok || !notificationsRes.ok) {
-        throw new Error("사용자 데이터를 불러오는데 실패했습니다.");
+      if (!session?.access_token) {
+        throw new Error("로그인이 필요합니다.");
       }
 
-      const [bookingsData, wishlistData, notificationsData] =
-        await Promise.all([
-          bookingsRes.json(),
-          wishlistRes.json(),
-          notificationsRes.json(),
-        ]);
+      const response = await apiClient.get<MyReservationsResponse>(
+        "/api/mypage/reservations",
+        {
+          headers: {
+            Authorization: `Bearer ${session.user.id}`,
+          },
+        }
+      );
+
+      const parsed = MyReservationsResponseSchema.safeParse(response.data);
+
+      if (!parsed.success) {
+        throw new Error("Invalid reservations response schema");
+      }
 
       dispatch({
-        type: "FETCH_SUCCESS",
-        payload: {
-          bookings: bookingsData.bookings || [],
-          wishlist: wishlistData.wishlist || [],
-          notifications: notificationsData.notifications || [],
-        },
+        type: "FETCH_RESERVATIONS_SUCCESS",
+        payload: parsed.data.reservations,
       });
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-      dispatch({ type: "FETCH_FAILURE", payload: errorMessage });
+        err instanceof Error
+          ? err.message
+          : "예매 내역을 불러오는데 실패했습니다.";
+      dispatch({ type: "FETCH_RESERVATIONS_FAILURE", payload: errorMessage });
     }
   }, []);
 
-  const toggleWishlist = useCallback(
-    async (concert: Concert) => {
-      dispatch({ type: "TOGGLE_WISHLIST_START" });
+  const fetchMyFavorites = useCallback(async () => {
+    dispatch({ type: "FETCH_FAVORITES_START" });
 
-      const isInWishlist = state.wishlist.some((c) => c.id === concert.id);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("로그인이 필요합니다.");
+      }
+
+      const response = await apiClient.get<MyFavoritesResponse>(
+        "/api/mypage/favorites",
+        {
+          headers: {
+            Authorization: `Bearer ${session.user.id}`,
+          },
+        }
+      );
+
+      const parsed = MyFavoritesResponseSchema.safeParse(response.data);
+
+      if (!parsed.success) {
+        throw new Error("Invalid favorites response schema");
+      }
+
+      dispatch({
+        type: "FETCH_FAVORITES_SUCCESS",
+        payload: parsed.data.favorites,
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "찜 목록을 불러오는데 실패했습니다.";
+      dispatch({ type: "FETCH_FAVORITES_FAILURE", payload: errorMessage });
+    }
+  }, []);
+
+  const toggleFavorite = useCallback(
+    async (concertId: string): Promise<boolean> => {
+      dispatch({ type: "TOGGLE_FAVORITE_START" });
 
       try {
-        if (isInWishlist) {
-          const response = await fetch(
-            `/api/user/wishlist/${concert.id}`,
-            {
-              method: "DELETE",
-            }
-          );
+        const supabase = getSupabaseBrowserClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-          if (!response.ok) {
-            throw new Error("찜 삭제에 실패했습니다.");
-          }
-
-          dispatch({
-            type: "REMOVE_WISHLIST_SUCCESS",
-            payload: concert.id,
-          });
-        } else {
-          const response = await fetch("/api/user/wishlist", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ concertId: concert.id }),
-          });
-
-          if (!response.ok) {
-            throw new Error("찜 추가에 실패했습니다.");
-          }
-
-          dispatch({
-            type: "ADD_WISHLIST_SUCCESS",
-            payload: concert,
-          });
+        if (!session?.access_token) {
+          throw new Error("로그인이 필요합니다.");
         }
+
+        const request: FavoriteToggleRequest = { concertId };
+
+        const response = await apiClient.post<FavoriteToggleResponse>(
+          "/api/favorites/toggle",
+          request,
+          {
+            headers: {
+              Authorization: `Bearer ${session.user.id}`,
+            },
+          }
+        );
+
+        const parsed = FavoriteToggleResponseSchema.safeParse(response.data);
+
+        if (!parsed.success) {
+          throw new Error("Invalid favorite toggle response schema");
+        }
+
+        dispatch({
+          type: "TOGGLE_FAVORITE_SUCCESS",
+          payload: { concertId, isFavorite: parsed.data.isFavorite },
+        });
+
+        return parsed.data.isFavorite;
       } catch (err) {
         const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "알 수 없는 오류가 발생했습니다.";
-        dispatch({ type: "WISHLIST_FAILURE", payload: errorMessage });
+          err instanceof Error ? err.message : "찜하기 처리에 실패했습니다.";
+        dispatch({ type: "TOGGLE_FAVORITE_FAILURE", payload: errorMessage });
+        throw err;
       }
     },
-    [state.wishlist]
+    []
   );
 
   const readNotification = useCallback((notificationId: string) => {
@@ -243,15 +306,17 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const value = useMemo<UserContextValue>(
     () => ({
       state,
-      fetchUserData,
-      toggleWishlist,
+      fetchMyReservations,
+      fetchMyFavorites,
+      toggleFavorite,
       readNotification,
       clearAllNotifications,
     }),
     [
       state,
-      fetchUserData,
-      toggleWishlist,
+      fetchMyReservations,
+      fetchMyFavorites,
+      toggleFavorite,
       readNotification,
       clearAllNotifications,
     ]
