@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient, extractApiErrorMessage } from '@/lib/remote/api-client';
+import { apiClient } from '@/lib/remote/api-client';
 import type {
   SignupRequest,
   AuthResponse,
@@ -20,13 +20,6 @@ export const useSignupMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['current-user'] });
-    },
-    onError: (error) => {
-      const errorMessage = extractApiErrorMessage(
-        error,
-        '회원가입에 실패했습니다.',
-      );
-      console.error('[useSignupMutation] Error:', errorMessage);
     },
   });
 };
